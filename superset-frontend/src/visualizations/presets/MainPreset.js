@@ -43,6 +43,7 @@ import TableChartPlugin from '@superset-ui/plugin-chart-table';
 import TreemapChartPlugin from '@superset-ui/legacy-plugin-chart-treemap';
 import { WordCloudChartPlugin } from '@superset-ui/plugin-chart-word-cloud';
 import WorldMapChartPlugin from '@superset-ui/legacy-plugin-chart-world-map';
+import { WaterfallChartPlugin } from '@superset-ui/plugin-chart-waterfall';
 import {
   AreaChartPlugin,
   BarChartPlugin,
@@ -91,6 +92,8 @@ export default class MainPreset extends Preset {
         new LineChartPlugin().configure({ key: 'line' }),
         new LineMultiChartPlugin().configure({ key: 'line_multi' }),
         new MapBoxChartPlugin().configure({ key: 'mapbox' }),
+        new WaterfallChartPlugin().configure({ key: 'waterfall' }),
+        new AreaChartPlugin().configure({ key: 'area' }),
         new MarkupChartPlugin().configure({ key: 'markup' }),
         new MarkupChartPlugin().configure({ key: 'separator' }),
         new PairedTTestChartPlugin().configure({ key: 'paired_ttest' }),

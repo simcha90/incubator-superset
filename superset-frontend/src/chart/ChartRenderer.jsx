@@ -74,6 +74,8 @@ class ChartRenderer extends React.Component {
       setControlValue: this.handleSetControlValue,
       onFilterMenuOpen: this.props.onFilterMenuOpen,
       onFilterMenuClose: this.props.onFilterMenuClose,
+      // forceRefresh - for dashboard; onQuery - for explore
+      runQuery: this.props.onQuery || this.props.forceRefresh,
     };
   }
 

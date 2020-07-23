@@ -91,7 +91,9 @@ export default class FilterScopeSelector extends React.PureComponent {
                 getChartIdsInFilterScope({
                   filterScope: dashboardFilters[filterId].scopes[columnName],
                 }) || []
-              ).filter(id => id !== filterId);
+              )
+              // No need remove itself because for case of chart it can filter itself
+              // .filter(id => id !== filterId);
 
               return {
                 ...mapByChartId,

@@ -50,7 +50,7 @@ function traverse({
       label:
         currentNode.meta.sliceName || `${type} ${currentNode.meta.chartId}`,
       type,
-      showCheckbox: selectedChartId !== currentNode.meta.chartId,
+      showCheckbox: true,
     };
 
     return {

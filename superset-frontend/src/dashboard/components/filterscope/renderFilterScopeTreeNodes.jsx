@@ -37,7 +37,7 @@ function traverse({ currentNode = {}, selectedChartId }) {
       label: (
         <a
           className={cx(`filter-scope-type ${type.toLowerCase()}`, {
-            'selected-filter': selectedChartId === value,
+            'selected-filter': false, // selectedChartId === value, // Now filter can check itself , because chart also can be filter
           })}
         >
           {type === CHART_TYPE && (

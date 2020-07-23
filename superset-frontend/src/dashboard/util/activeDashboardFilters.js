@@ -120,7 +120,9 @@ export function buildActiveFilters({ dashboardFilters = {}, components = {} }) {
         // remove filter itself
         const scope = getChartIdsInFilterScope({
           filterScope: scopes[column],
-        }).filter(id => chartId !== id);
+        });
+        // No need remove itself because for case of chart it can filter itself
+        // .filter(id => chartId !== id);
 
         nonEmptyFilters[getDashboardFilterKey({ chartId, column })] = {
           values: columns[column],

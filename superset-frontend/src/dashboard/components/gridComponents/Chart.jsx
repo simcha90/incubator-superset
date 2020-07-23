@@ -177,12 +177,12 @@ class Chart extends React.Component {
     this.setState(() => ({ width, height }));
   }
 
-  changeFilter(newSelectedValues = {}) {
+  changeFilter(newSelectedValues = {}, merge = true) {
     this.props.logEvent(LOG_ACTIONS_CHANGE_DASHBOARD_FILTER, {
       id: this.props.chart.id,
       columns: Object.keys(newSelectedValues),
     });
-    this.props.changeFilter(this.props.chart.id, newSelectedValues);
+    this.props.changeFilter(this.props.chart.id, newSelectedValues, merge);
   }
 
   handleFilterMenuOpen(chartId, column) {
@@ -321,6 +321,7 @@ class Chart extends React.Component {
           <ChartContainer
             width={width}
             height={this.getChartHeight()}
+            forceRefresh={this.forceRefresh}
             addFilter={this.changeFilter}
             onFilterMenuOpen={this.handleFilterMenuOpen}
             onFilterMenuClose={this.handleFilterMenuClose}
