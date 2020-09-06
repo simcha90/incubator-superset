@@ -144,6 +144,7 @@ export default class MetricsControl extends React.PureComponent {
     this.optionRenderer = option => <MetricDefinitionOption option={option} />;
     this.valueRenderer = option => (
       <MetricDefinitionValue
+        fields={this.props.fields}
         option={option}
         onMetricEdit={this.onMetricEdit}
         columns={this.props.columns}

@@ -72,6 +72,7 @@ class AdhocMetricOption extends React.PureComponent {
         onResize={this.onPopoverResize}
         adhocMetric={adhocMetric}
         onChange={this.props.onMetricEdit}
+        fields={this.props.fields}
         onClose={this.closeMetricEditOverlay}
         columns={this.props.columns}
         datasourceType={this.props.datasourceType}

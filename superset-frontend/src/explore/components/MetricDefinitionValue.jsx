@@ -40,6 +40,7 @@ export default function MetricDefinitionValue({
   columns,
   multi,
   datasourceType,
+  fields
 }) {
   if (option.metric_name) {
     return <MetricOption metric={option} />;
@@ -47,6 +48,7 @@ export default function MetricDefinitionValue({
   if (option instanceof AdhocMetric) {
     return (
       <AdhocMetricOption
+        fields={fields}
         adhocMetric={option}
         onMetricEdit={onMetricEdit}
         columns={columns}

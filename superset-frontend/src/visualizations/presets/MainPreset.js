@@ -41,6 +41,7 @@ import TableChartPlugin from '@superset-ui/plugin-chart-table';
 import TreemapChartPlugin from '@superset-ui/legacy-plugin-chart-treemap';
 import { WordCloudChartPlugin } from '@superset-ui/plugin-chart-word-cloud';
 import WorldMapChartPlugin from '@superset-ui/legacy-plugin-chart-world-map';
+import { ComposedChartPlugin } from '@superset-ui/plugin-chart-composed';
 import {
   AreaChartPlugin,
   BarChartPlugin,
@@ -95,6 +96,7 @@ export default class MainPreset extends Preset {
         new PieChartPlugin().configure({ key: 'pie' }),
         new PivotTableChartPlugin().configure({ key: 'pivot_table' }),
         new RoseChartPlugin().configure({ key: 'rose' }),
+        new ComposedChartPlugin().configure({ key: 'composed' }),
         new SankeyChartPlugin().configure({ key: 'sankey' }),
         new SunburstChartPlugin().configure({ key: 'sunburst' }),
         new TableChartPlugin().configure({ key: 'table' }),

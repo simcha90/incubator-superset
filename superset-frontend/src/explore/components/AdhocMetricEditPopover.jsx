@@ -45,6 +45,7 @@ const propTypes = {
   onChange: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   onResize: PropTypes.func.isRequired,
+  fields: PropTypes.array,
   columns: PropTypes.arrayOf(columnType),
   datasourceType: PropTypes.string,
   theme: PropTypes.object,
@@ -52,10 +53,12 @@ const propTypes = {
 
 const defaultProps = {
   columns: [],
+  fields: [],
 };
 
 const startingWidth = 300;
 const startingHeight = 180;
+const rowHeight = 55;
 
 export default class AdhocMetricEditPopover extends React.Component {
   constructor(props) {
@@ -73,7 +76,7 @@ export default class AdhocMetricEditPopover extends React.Component {
     this.state = {
       adhocMetric: this.props.adhocMetric,
       width: startingWidth,
-      height: startingHeight,
+      height: `${startingHeight} + ${this.props.fields.length * rowHeight}`,
     };
     this.selectProps = {
       labelKey: 'label',
@@ -196,6 +199,7 @@ export default class AdhocMetricEditPopover extends React.Component {
       onResize,
       datasourceType,
       theme,
+      fields,
       ...popoverProps
     } = this.props;
 
@@ -271,6 +275,21 @@ export default class AdhocMetricEditPopover extends React.Component {
                   autoFocus
                 />
               </FormGroup>
+              {fields.map(
+                ({ type, label, ...fieldProps }, i) =>
+                  type === 'SelectControl' && (
+                    <FormGroup>
+                      <FormLabel>
+                        <strong>{label}</strong>
+                      </FormLabel>
+                      <Select
+                        name={`select-${i}`}
+                        {...this.selectProps}
+                        {...fieldProps}
+                      />
+                    </FormGroup>
+                  ),
+              )}
             </Tab>
             <Tab
               className="adhoc-metric-edit-tab"

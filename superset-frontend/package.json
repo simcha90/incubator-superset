@@ -93,6 +93,7 @@
     "@superset-ui/number-format": "^0.14.23",
     "@superset-ui/plugin-chart-echarts": "^0.14.23",
     "@superset-ui/plugin-chart-table": "^0.14.23",
+    "@superset-ui/plugin-chart-composed": "^0.0.0",
     "@superset-ui/plugin-chart-word-cloud": "^0.14.23",
     "@superset-ui/preset-chart-xy": "^0.14.23",
     "@superset-ui/query": "^0.14.23",
