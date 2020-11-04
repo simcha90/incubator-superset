@@ -17,7 +17,7 @@
  * under the License.
  */
 import React from 'react';
-import { Button } from 'react-bootstrap';
+import Button from 'src/components/Button';
 import { shallow } from 'enzyme';
 import sinon from 'sinon';
 
@@ -60,7 +60,7 @@ describe('QuerySearch', () => {
   });
 
   it('should have one input for searchText', () => {
-    expect(wrapper.find('input')).toHaveLength(1);
+    expect(wrapper.find('input')).toExist();
   });
 
   it('updates search text on user inputs search text', () => {
@@ -77,7 +77,7 @@ describe('QuerySearch', () => {
   });
 
   it('should have one Button', () => {
-    expect(wrapper.find(Button)).toHaveLength(1);
+    expect(wrapper.find(Button)).toExist();
   });
 
   it('refreshes queries when clicked', () => {

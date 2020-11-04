@@ -21,9 +21,12 @@ import PropTypes from 'prop-types';
 import { debounce } from 'lodash';
 import { max as d3Max } from 'd3-array';
 import { AsyncCreatableSelect, CreatableSelect } from 'src/components/Select';
-import { Button } from 'react-bootstrap';
+import { Space } from 'src/common/components';
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
+import styled from '@superset-ui/style';
+
+import FormLabel from 'src/components/FormLabel';
 
 import DateFilterControl from '../../explore/components/controls/DateFilterControl';
 import ControlRow from '../../explore/components/ControlRow';
@@ -58,7 +61,6 @@ const propTypes = {
   chartId: PropTypes.number.isRequired,
   origSelectedValues: PropTypes.object,
   datasource: PropTypes.object.isRequired,
-  instantFiltering: PropTypes.bool,
   filtersFields: PropTypes.arrayOf(
     PropTypes.shape({
       field: PropTypes.string,
@@ -94,8 +96,8 @@ const defaultProps = {
   showSqlaTimeColumn: false,
   showDruidTimeGrain: false,
   showDruidTimeOrigin: false,
-  instantFiltering: false,
 };
+
 
 class FilterBox extends React.Component {
   constructor(props) {
@@ -173,9 +175,7 @@ class FilterBox extends React.Component {
     };
 
     this.setState({ selectedValues, hasChanged: true }, () => {
-      if (this.props.instantFiltering) {
-        this.props.onChange({ [fltr]: vals }, false);
-      }
+      this.props.onChange({ [fltr]: vals }, false);
     });
   }
 
@@ -331,7 +331,7 @@ class FilterBox extends React.Component {
           ? selectedValues[key]
           : [selectedValues[key]];
         selectedValuesForKey
-          .filter(value => !choiceIds.has(value))
+          .filter(value => value !== null && !choiceIds.has(value))
           .forEach(value => {
             choices.unshift({
               filter: key,
@@ -398,7 +398,7 @@ class FilterBox extends React.Component {
         <div key={key} className="m-b-5 filter-container">
           {this.renderFilterBadge(chartId, key, label)}
           <div>
-            <label htmlFor={`LABEL-${key}`}>{label}</label>
+            <FormLabel htmlFor={`LABEL-${key}`}>{label}</FormLabel>
             {this.renderSelect(filterConfig)}
           </div>
         </div>
@@ -419,26 +419,12 @@ class FilterBox extends React.Component {
   }
 
   render() {
-    const { instantFiltering } = this.props;
-
     return (
-      <div className="scrollbar-container">
-        <div className="scrollbar-content">
-          {this.renderDateFilter()}
-          {this.renderDatasourceFilters()}
-          {this.renderFilters()}
-          {!instantFiltering && (
-            <Button
-              bsSize="small"
-              bsStyle="primary"
-              onClick={this.clickApply.bind(this)}
-              disabled={!this.state.hasChanged}
-            >
-              {t('Apply')}
-            </Button>
-          )}
-        </div>
-      </div>
+      <Space>
+        {this.renderDateFilter()}
+        {this.renderDatasourceFilters()}
+        {this.renderFilters()}
+      </Space>
     );
   }
 }

@@ -19,7 +19,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
-import { Button } from 'react-bootstrap';
+import Button from 'src/components/Button';
 import { t } from '@superset-ui/translation';
 
 import buildFilterScopeTreeEntry from '../../util/buildFilterScopeTreeEntry';
@@ -513,9 +513,11 @@ export default class FilterScopeSelector extends React.PureComponent {
         </div>
 
         <div className="dashboard-modal-actions-container">
-          <Button onClick={this.onClose}>{t('Close')}</Button>
+          <Button buttonSize="sm" onClick={this.onClose}>
+            {t('Close')}
+          </Button>
           {showSelector && (
-            <Button bsStyle="primary" onClick={this.onSave}>
+            <Button buttonSize="sm" buttonStyle="primary" onClick={this.onSave}>
               {t('Save')}
             </Button>
           )}

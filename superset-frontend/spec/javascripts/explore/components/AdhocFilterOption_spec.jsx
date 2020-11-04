@@ -19,9 +19,10 @@
 /* eslint-disable no-unused-expressions */
 import React from 'react';
 import sinon from 'sinon';
-import { shallow } from 'enzyme';
-import { Label, OverlayTrigger } from 'react-bootstrap';
+import { styledShallow as shallow } from 'spec/helpers/theming';
+import { OverlayTrigger } from 'react-bootstrap';
 
+import Label from 'src/components/Label';
 import AdhocFilter, {
   EXPRESSION_TYPES,
   CLAUSES,
@@ -45,7 +46,7 @@ function setup(overrides) {
     datasource: {},
     ...overrides,
   };
-  const wrapper = shallow(<AdhocFilterOption {...props} />);
+  const wrapper = shallow(<AdhocFilterOption {...props} />).dive();
   return { wrapper };
 }
 
@@ -55,7 +56,7 @@ describe('AdhocFilterOption', () => {
     const overlay = wrapper.find(OverlayTrigger);
     expect(overlay).toHaveLength(1);
     expect(overlay.props().defaultOverlayShown).toBe(false);
-    expect(wrapper.find(Label)).toHaveLength(1);
+    expect(wrapper.find(Label)).toExist();
   });
   it('should open new filter popup by default', () => {
     const { wrapper } = setup({

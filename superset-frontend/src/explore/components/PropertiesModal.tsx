@@ -18,7 +18,6 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Button,
   Modal,
   Row,
   Col,
@@ -26,6 +25,7 @@ import {
   FormGroup,
   // @ts-ignore
 } from 'react-bootstrap';
+import Button from 'src/components/Button';
 // @ts-ignore
 import Dialog from 'react-bootstrap-dialog';
 import { OptionsType } from 'react-select/src/types';
@@ -34,9 +34,11 @@ import rison from 'rison';
 import { t } from '@superset-ui/translation';
 import { SupersetClient } from '@superset-ui/connection';
 import Chart from 'src/types/Chart';
+import FormLabel from 'src/components/FormLabel';
 import getClientErrorObject from '../../utils/getClientErrorObject';
 
 export type Slice = {
+  id?: number;
   slice_id: number;
   slice_name: string;
   description: string | null;
@@ -182,9 +184,9 @@ function PropertiesModal({ slice, onHide, onSave }: InternalProps) {
           <Col md={6}>
             <h3>{t('Basic Information')}</h3>
             <FormGroup>
-              <label className="control-label" htmlFor="name">
+              <FormLabel htmlFor="name" required>
                 {t('Name')}
-              </label>
+              </FormLabel>
               <FormControl
                 name="name"
                 type="text"
@@ -197,9 +199,7 @@ function PropertiesModal({ slice, onHide, onSave }: InternalProps) {
               />
             </FormGroup>
             <FormGroup>
-              <label className="control-label" htmlFor="description">
-                {t('Description')}
-              </label>
+              <FormLabel htmlFor="description">{t('Description')}</FormLabel>
               <FormControl
                 name="description"
                 type="text"
@@ -222,9 +222,7 @@ function PropertiesModal({ slice, onHide, onSave }: InternalProps) {
           <Col md={6}>
             <h3>{t('Configuration')}</h3>
             <FormGroup>
-              <label className="control-label" htmlFor="cacheTimeout">
-                {t('Cache Timeout')}
-              </label>
+              <FormLabel htmlFor="cacheTimeout">{t('Cache Timeout')}</FormLabel>
               <FormControl
                 name="cacheTimeout"
                 type="text"
@@ -243,9 +241,7 @@ function PropertiesModal({ slice, onHide, onSave }: InternalProps) {
             </FormGroup>
             <h3 style={{ marginTop: '1em' }}>{t('Access')}</h3>
             <FormGroup>
-              <label className="control-label" htmlFor="owners">
-                {t('Owners')}
-              </label>
+              <FormLabel htmlFor="owners">{t('Owners')}</FormLabel>
               <AsyncSelect
                 isMulti
                 name="owners"
@@ -267,17 +263,17 @@ function PropertiesModal({ slice, onHide, onSave }: InternalProps) {
         </Row>
       </Modal.Body>
       <Modal.Footer>
+        <Button type="button" buttonSize="sm" onClick={onHide} cta>
+          {t('Cancel')}
+        </Button>
         <Button
           type="submit"
-          bsSize="sm"
-          bsStyle="primary"
-          className="m-r-5"
-          disabled={!owners || submitting}
+          buttonSize="sm"
+          buttonStyle="primary"
+          disabled={!owners || submitting || !name}
+          cta
         >
           {t('Save')}
-        </Button>
-        <Button type="button" bsSize="sm" onClick={onHide}>
-          {t('Cancel')}
         </Button>
         <Dialog ref={errorDialog} />
       </Modal.Footer>

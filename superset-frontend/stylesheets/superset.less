@@ -26,10 +26,6 @@
   color: @danger;
 }
 
-.label {
-  font-size: 100%;
-}
-
 .no-wrap {
   white-space: nowrap;
 }
@@ -200,6 +196,10 @@ table.table-no-hover tr:hover {
   background-color: initial;
 }
 
+.editable-title {
+  margin-right: 8px;
+}
+
 .editable-title input {
   outline: none;
   background: transparent;
@@ -237,6 +237,7 @@ table.table-no-hover tr:hover {
 }
 
 .editable-title.datasource-sql-expression textarea {
+  min-height: 100px;
   width: 95%;
 }
 
@@ -324,6 +325,10 @@ table.table-no-hover tr:hover {
 
 .m-b-10 {
   margin-bottom: 10px;
+}
+
+.m-l-4 {
+  margin-left: 4px;
 }
 
 .m-l-5 {
@@ -444,6 +449,9 @@ table.table-no-hover tr:hover {
   line-height: 2px;
   border-radius: 50%;
   box-shadow: 2px 2px 4px -1px fade(@darkest, @opacity-light);
+  i {
+    width: 10px;
+  }
 }
 
 iframe {
@@ -559,4 +567,36 @@ td.filtered {
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+// Making native radio buttons use brand color
+input[type='radio']:after {
+  width: 15px;
+  height: 15px;
+  border-radius: 15px;
+  top: -2px;
+  left: -1px;
+  position: relative;
+  background-color: #fff;
+  content: '';
+  display: inline-block;
+  visibility: visible;
+  border: 2px solid @gray;
+}
+
+input[type='radio']:checked:after {
+  width: 15px;
+  height: 15px;
+  border-radius: 15px;
+  top: -2px;
+  left: -1px;
+  position: relative;
+  background-color: #fff;
+  content: '';
+  display: inline-block;
+  visibility: visible;
+  border: 5px solid @brand-primary;
+}
+hr {
+  border-top: 1px solid @gray-light;
 }

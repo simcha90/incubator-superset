@@ -18,35 +18,24 @@
  */
 import React from 'react';
 import { shallow, mount } from 'enzyme';
-import { Nav } from 'react-bootstrap';
+import { Nav, MenuItem } from 'react-bootstrap';
+import NavDropdown from 'src/components/NavDropdown';
+import { supersetTheme, ThemeProvider } from '@superset-ui/style';
 
-import Menu from 'src/components/Menu/Menu';
+import { Menu } from 'src/components/Menu/Menu';
 
 const defaultProps = {
   data: {
     menu: [
-      {
-        name: 'Security',
-        icon: 'fa-cogs',
-        label: 'Security',
-        childs: [
-          {
-            name: 'List Users',
-            icon: 'fa-user',
-            label: 'List Users',
-            url: '/users/list/',
-          },
-        ],
-      },
       {
         name: 'Sources',
         icon: 'fa-table',
         label: 'Sources',
         childs: [
           {
-            name: 'Tables',
+            name: 'Datasets',
             icon: 'fa-table',
-            label: 'Tables',
+            label: 'Datasets',
             url: '/tablemodelview/list/?_flt_1_is_sqllab_view=y',
           },
           '-',
@@ -99,6 +88,21 @@ const defaultProps = {
       user_login_url: '/login/',
       locale: 'en',
     },
+    settings: [
+      {
+        name: 'Security',
+        icon: 'fa-cogs',
+        label: 'Security',
+        childs: [
+          {
+            name: 'List Users',
+            icon: 'fa-user',
+            label: 'List Users',
+            url: '/users/list/',
+          },
+        ],
+      },
+    ],
   },
 };
 
@@ -118,7 +122,7 @@ describe('Menu', () => {
   });
 
   it('renders the brand', () => {
-    expect(wrapper.find('.navbar-brand')).toHaveLength(1);
+    expect(wrapper.find('.navbar-brand')).toExist();
   });
 
   it('renders 2 navs', () => {
@@ -156,8 +160,19 @@ describe('Menu', () => {
       ...overrideProps,
     };
 
-    const versionedWrapper = mount(<Menu {...props} />);
+    const versionedWrapper = mount(<Menu {...props} />, {
+      wrappingComponent: ThemeProvider,
+      wrappingComponentProps: { theme: supersetTheme },
+    });
 
     expect(versionedWrapper.find('.version-info div')).toHaveLength(2);
+  });
+
+  it('renders a NavDropdown (settings)', () => {
+    expect(wrapper.find(NavDropdown)).toHaveLength(1);
+  });
+
+  it('renders MenuItems in NavDropdown (settings)', () => {
+    expect(wrapper.find(NavDropdown).find(MenuItem)).toHaveLength(2);
   });
 });

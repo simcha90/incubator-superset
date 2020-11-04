@@ -30,16 +30,20 @@ describe('Advanced analytics', () => {
 
     cy.get('.panel-title').contains('Advanced Analytics').click();
 
-    cy.get('[data-test=time_compare]').within(() => {
-      cy.get('.Select__control').click();
-      cy.get('input[type=text]').type('28 days{enter}');
+    cy.get('[data-test=time_compare]').find('.Select__control').click();
+    cy.get('[data-test=time_compare]')
+      .find('input[type=text]')
+      .type('28 days{enter}');
 
-      cy.get('.Select__control').click();
-      cy.get('input[type=text]').type('364 days{enter}');
-      cy.get('.Select__multi-value__label').contains('364 days');
-    });
+    cy.get('[data-test=time_compare]').find('.Select__control').click();
+    cy.get('[data-test=time_compare]')
+      .find('input[type=text]')
+      .type('364 days{enter}');
+    cy.get('[data-test=time_compare]')
+      .find('.Select__multi-value__label')
+      .contains('364 days');
 
-    cy.get('button.query').click();
+    cy.get('button[data-test="run-query-button"]').click();
     cy.wait('@postJson');
     cy.reload();
     cy.verifySliceSuccess({
@@ -86,7 +90,7 @@ describe('Annotations', () => {
       cy.get('button').contains('OK').click();
     });
 
-    cy.get('button.query').click();
+    cy.get('button[data-test="run-query-button"]').click();
     cy.verifySliceSuccess({
       waitAlias: '@postJson',
       chartSelector: 'svg',

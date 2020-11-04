@@ -22,7 +22,7 @@ import { Table } from 'reactable-arc';
 import { Alert } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
 
-import Button from '../../components/Button';
+import Button from 'src/components/Button';
 import Loading from '../../components/Loading';
 import ModalTrigger from '../../components/ModalTrigger';
 
@@ -85,8 +85,8 @@ class EstimateQueryCostButton extends React.PureComponent {
           modalBody={this.renderModalBody()}
           triggerNode={
             <Button
-              bsStyle="warning"
-              bsSize="small"
+              buttonStyle="warning"
+              buttonSize="small"
               onClick={this.onClick}
               key="query-estimate-btn"
               tooltip={tooltip}
@@ -95,7 +95,6 @@ class EstimateQueryCostButton extends React.PureComponent {
               <i className="fa fa-clock-o" /> {btnText}
             </Button>
           }
-          bsSize="medium"
         />
       </span>
     );

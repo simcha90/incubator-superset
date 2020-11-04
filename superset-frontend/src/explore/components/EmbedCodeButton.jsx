@@ -21,8 +21,10 @@ import PropTypes from 'prop-types';
 import { Popover, OverlayTrigger } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
 
-import CopyToClipboard from './../../components/CopyToClipboard';
-import { getExploreLongUrl } from '../exploreUtils';
+import FormLabel from 'src/components/FormLabel';
+import CopyToClipboard from 'src/components/CopyToClipboard';
+import { getExploreLongUrl, getURIDirectory } from '../exploreUtils';
+import { getShortUrl } from '../../utils/common';
 
 const propTypes = {
   latestQueryFormData: PropTypes.object.isRequired,
@@ -34,8 +36,24 @@ export default class EmbedCodeButton extends React.Component {
     this.state = {
       height: '400',
       width: '600',
+      shortUrlId: 0,
     };
     this.handleInputChange = this.handleInputChange.bind(this);
+    this.getCopyUrl = this.getCopyUrl.bind(this);
+    this.onShortUrlSuccess = this.onShortUrlSuccess.bind(this);
+  }
+
+  onShortUrlSuccess(shortUrl) {
+    const shortUrlId = shortUrl.substring(shortUrl.indexOf('/r/') + 3);
+    this.setState(() => ({
+      shortUrlId,
+    }));
+  }
+
+  getCopyUrl() {
+    return getShortUrl(getExploreLongUrl(this.props.latestQueryFormData))
+      .then(this.onShortUrlSuccess)
+      .catch(this.props.addDangerToast);
   }
 
   handleInputChange(e) {
@@ -47,10 +65,9 @@ export default class EmbedCodeButton extends React.Component {
   }
 
   generateEmbedHTML() {
-    const srcLink = `${
-      window.location.origin +
-      getExploreLongUrl(this.props.latestQueryFormData, 'standalone')
-    }&height=${this.state.height}`;
+    const srcLink = `${window.location.origin + getURIDirectory()}?r=${
+      this.state.shortUrlId
+    }&standalone=true&height=${this.state.height}`;
     return (
       '<iframe\n' +
       `  width="${this.state.width}"\n` +
@@ -97,9 +114,7 @@ export default class EmbedCodeButton extends React.Component {
             <div className="col-md-6 col-sm-12">
               <div className="form-group">
                 <small>
-                  <label className="control-label" htmlFor="embed-height">
-                    {t('Height')}
-                  </label>
+                  <FormLabel htmlFor="embed-height">{t('Height')}</FormLabel>
                 </small>
                 <input
                   className="form-control input-sm"
@@ -113,9 +128,7 @@ export default class EmbedCodeButton extends React.Component {
             <div className="col-md-6 col-sm-12">
               <div className="form-group">
                 <small>
-                  <label className="control-label" htmlFor="embed-width">
-                    {t('Width')}
-                  </label>
+                  <FormLabel htmlFor="embed-width">{t('Width')}</FormLabel>
                 </small>
                 <input
                   className="form-control input-sm"
@@ -138,6 +151,7 @@ export default class EmbedCodeButton extends React.Component {
         trigger="click"
         rootClose
         placement="left"
+        onEnter={this.getCopyUrl}
         overlay={this.renderPopover()}
       >
         <span className="btn btn-default btn-sm" data-test="embed-code-button">

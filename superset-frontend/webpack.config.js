@@ -112,14 +112,13 @@ const plugins = [
     checkSyntacticErrors: true,
   }),
 
-  new CopyPlugin(
-    [
+  new CopyPlugin({
+    patterns: [
       'package.json',
       { from: 'images', to: 'images' },
       { from: 'stylesheets', to: 'stylesheets' },
     ],
-    { copyUnmodified: true },
-  ),
+  }),
 ];
 if (!process.env.CI) {
   plugins.push(new webpack.ProgressPlugin());
@@ -181,7 +180,8 @@ const config = {
     explore: addPreamble('/src/explore/index.jsx'),
     dashboard: addPreamble('/src/dashboard/index.jsx'),
     sqllab: addPreamble('/src/SqlLab/index.tsx'),
-    welcome: addPreamble('/src/welcome/index.tsx'),
+    crudViews: addPreamble('/src/views/index.tsx'),
+    menu: addPreamble('src/views/menu.tsx'),
     profile: addPreamble('/src/profile/index.tsx'),
     showSavedQuery: [path.join(APP_DIR, '/src/showSavedQuery/index.jsx')],
   },
@@ -231,6 +231,7 @@ const config = {
       },
       {
         test: /\.tsx?$/,
+        exclude: [/\.test.tsx?$/],
         use: [
           'thread-loader',
           babelLoader,
@@ -293,6 +294,7 @@ const config = {
             loader: 'less-loader',
             options: {
               sourceMap: isDevMode,
+              javascriptEnabled: true,
             },
           },
         ],

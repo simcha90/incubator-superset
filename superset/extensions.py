@@ -29,10 +29,12 @@ from flask import Flask
 from flask_appbuilder import AppBuilder, SQLA
 from flask_migrate import Migrate
 from flask_talisman import Talisman
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.local import LocalProxy
 
 from superset.utils.cache_manager import CacheManager
 from superset.utils.feature_flag_manager import FeatureFlagManager
+from superset.utils.machine_auth import MachineAuthProviderFactory
 
 if TYPE_CHECKING:
     from superset.jinja_context import (  # pylint: disable=unused-import
@@ -132,11 +134,13 @@ APP_DIR = os.path.dirname(__file__)
 appbuilder = AppBuilder(update_perms=False)
 cache_manager = CacheManager()
 celery_app = celery.Celery()
+csrf = CSRFProtect()
 db = SQLA()
 _event_logger: Dict[str, Any] = {}
 event_logger = LocalProxy(lambda: _event_logger.get("event_logger"))
 feature_flag_manager = FeatureFlagManager()
 jinja_context_manager = JinjaContextManager()
+machine_auth_provider_factory = MachineAuthProviderFactory()
 manifest_processor = UIManifestProcessor(APP_DIR)
 migrate = Migrate()
 results_backend_manager = ResultsBackendManager()

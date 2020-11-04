@@ -20,7 +20,7 @@ import React from 'react';
 import styled from '@superset-ui/style';
 import { Modal as BaseModal } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
-import Button from '../views/datasetList/Button';
+import Button from 'src/components/Button';
 
 interface ModalProps {
   children: React.ReactNode;
@@ -31,7 +31,7 @@ interface ModalProps {
   primaryButtonType?: 'primary' | 'danger';
   show: boolean;
   title: React.ReactNode;
-  bsSize?: 'xs' | 'xsmall' | 'sm' | 'small' | 'medium' | 'lg' | 'large';
+  bsSize?: 'small' | 'large'; // react-bootstrap also supports 'sm', 'lg' but we're keeping it simple.
 }
 
 const StyledModal = styled(BaseModal)`
@@ -54,9 +54,6 @@ const StyledModal = styled(BaseModal)`
   .modal-footer {
     border-top: 1px solid ${({ theme }) => theme.colors.grayscale.light2};
     padding: 16px;
-    .btn + .btn {
-      margin-left: 8px;
-    }
   }
 `;
 
@@ -75,10 +72,9 @@ export default function Modal({
   primaryButtonType = 'primary',
   show,
   title,
-  bsSize = 'lg',
 }: ModalProps) {
   return (
-    <StyledModal show={show} onHide={onHide} bsSize={bsSize}>
+    <StyledModal show={show} onHide={onHide}>
       <BaseModal.Header closeButton>
         <BaseModal.Title>
           <Title>{title}</Title>
@@ -87,11 +83,14 @@ export default function Modal({
       <BaseModal.Body>{children}</BaseModal.Body>
       <BaseModal.Footer>
         <span className="float-right">
-          <Button onClick={onHide}>{t('Cancel')}</Button>
+          <Button onClick={onHide} cta>
+            {t('Cancel')}
+          </Button>
           <Button
-            bsStyle={primaryButtonType}
+            buttonStyle={primaryButtonType}
             disabled={disablePrimaryButton}
             onClick={onHandledPrimaryAction}
+            cta
           >
             {primaryButtonName}
           </Button>

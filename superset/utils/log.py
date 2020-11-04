@@ -42,7 +42,7 @@ class AbstractEventLogger(ABC):
         @functools.wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             user_id = None
-            if g.user:
+            if hasattr(g, "user") and g.user:
                 user_id = g.user.get_id()
             payload = request.form.to_dict() or {}
 
@@ -169,7 +169,6 @@ class DBEventLogger(AbstractEventLogger):
                 user_id=user_id,
             )
             logs.append(log)
-
         try:
             sesh = current_app.appbuilder.get_session
             sesh.bulk_save_objects(logs)

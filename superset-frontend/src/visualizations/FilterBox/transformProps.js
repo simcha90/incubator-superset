@@ -36,7 +36,6 @@ export default function transformProps(chartProps) {
   const {
     sliceId,
     dateFilter,
-    instantFiltering,
     showDruidTimeGranularity,
     showDruidTimeOrigin,
     showSqlaTimeColumn,
@@ -56,7 +55,6 @@ export default function transformProps(chartProps) {
     datasource: rawDatasource,
     filtersChoices: queryData.data,
     filtersFields,
-    instantFiltering,
     onChange: onAddFilter,
     onFilterMenuOpen,
     onFilterMenuClose,

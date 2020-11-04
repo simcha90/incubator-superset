@@ -39,13 +39,13 @@ import getDragDropManager from '../util/getDragDropManager';
 import findTabIndexByComponentId from '../util/findTabIndexByComponentId';
 
 import {
-  BUILDER_PANE_TYPE,
   DASHBOARD_GRID_ID,
   DASHBOARD_ROOT_ID,
   DASHBOARD_ROOT_DEPTH,
 } from '../util/constants';
 import getDirectPathToTabIndex from '../util/getDirectPathToTabIndex';
 import getLeafComponentIdFromPath from '../util/getLeafComponentIdFromPath';
+import FiltersRow from './filters/FiltersRow';
 
 const TABS_HEIGHT = 47;
 const HEADER_HEIGHT = 67;
@@ -56,12 +56,12 @@ const propTypes = {
   deleteTopLevelTabs: PropTypes.func.isRequired,
   editMode: PropTypes.bool.isRequired,
   showBuilderPane: PropTypes.func.isRequired,
-  builderPaneType: PropTypes.string.isRequired,
   colorScheme: PropTypes.string,
   setColorSchemeAndUnsavedChanges: PropTypes.func.isRequired,
   handleComponentDrop: PropTypes.func.isRequired,
   directPathToChild: PropTypes.arrayOf(PropTypes.string),
   setDirectPathToChild: PropTypes.func.isRequired,
+  setMountedTab: PropTypes.func.isRequired,
 };
 
 const defaultProps = {
@@ -161,10 +161,10 @@ class DashboardBuilder extends React.Component {
       dashboardLayout,
       editMode,
       showBuilderPane,
-      builderPaneType,
       setColorSchemeAndUnsavedChanges,
       colorScheme,
     } = this.props;
+
     const { tabIndex } = this.state;
     const dashboardRoot = dashboardLayout[DASHBOARD_ROOT_ID];
     const rootChildId = dashboardRoot.children[0];
@@ -224,56 +224,68 @@ class DashboardBuilder extends React.Component {
           )}
         </Sticky>
 
-        <div className="dashboard-content">
-          <div className="grid-container">
-            <ParentSize>
-              {({ width }) => (
-                /*
+        <div>
+          <div className="filters-container">
+            <FiltersRow />
+          </div>
+          <div className="dashboard-content">
+            <div className="grid-container">
+              <ParentSize>
+                {({ width }) => (
+                  /*
                   We use a TabContainer irrespective of whether top-level tabs exist to maintain
                   a consistent React component tree. This avoids expensive mounts/unmounts of
                   the entire dashboard upon adding/removing top-level tabs, which would otherwise
                   happen because of React's diffing algorithm
                 */
-                <TabContainer
-                  id={DASHBOARD_GRID_ID}
-                  activeKey={Math.min(tabIndex, childIds.length - 1)}
-                  onSelect={this.handleChangeTab}
-                  animation
-                  mountOnEnter
-                  unmountOnExit={false}
-                >
-                  <TabContent>
-                    {childIds.map((id, index) => (
-                      // Matching the key of the first TabPane irrespective of topLevelTabs
-                      // lets us keep the same React component tree when !!topLevelTabs changes.
-                      // This avoids expensive mounts/unmounts of the entire dashboard.
-                      <TabPane
-                        key={index === 0 ? DASHBOARD_GRID_ID : id}
-                        eventKey={index}
-                      >
-                        <DashboardGrid
-                          gridComponent={dashboardLayout[id]}
-                          // see isValidChild for why tabs do not increment the depth of their children
-                          depth={DASHBOARD_ROOT_DEPTH + 1} // (topLevelTabs ? 0 : 1)}
-                          width={width}
-                          isComponentVisible={index === tabIndex}
-                        />
-                      </TabPane>
-                    ))}
-                  </TabContent>
-                </TabContainer>
-              )}
-            </ParentSize>
+                  <TabContainer
+                    id={DASHBOARD_GRID_ID}
+                    activeKey={Math.min(tabIndex, childIds.length - 1)}
+                    onSelect={this.handleChangeTab}
+                    animation
+                    mountOnEnter
+                    unmountOnExit={false}
+                  >
+                    <TabContent>
+                      {childIds.map((id, index) => (
+                        // Matching the key of the first TabPane irrespective of topLevelTabs
+                        // lets us keep the same React component tree when !!topLevelTabs changes.
+                        // This avoids expensive mounts/unmounts of the entire dashboard.
+                        <TabPane
+                          key={index === 0 ? DASHBOARD_GRID_ID : id}
+                          eventKey={index}
+                          mountOnEnter
+                          unmountOnExit={false}
+                          onEntering={() => {
+                            // Entering current tab, DOM is visible and has dimension
+                            this.props.setMountedTab(id);
+                          }}
+                        >
+                          <DashboardGrid
+                            gridComponent={dashboardLayout[id]}
+                            // see isValidChild for why tabs do not increment the depth of their children
+                            depth={DASHBOARD_ROOT_DEPTH + 1} // (topLevelTabs ? 0 : 1)}
+                            width={width}
+                            isComponentVisible={index === tabIndex}
+                          />
+                        </TabPane>
+                      ))}
+                    </TabContent>
+                  </TabContainer>
+                )}
+              </ParentSize>
+            </div>
+            {editMode && (
+              <BuilderComponentPane
+                topOffset={HEADER_HEIGHT + (topLevelTabs ? TABS_HEIGHT : 0)}
+                showBuilderPane={showBuilderPane}
+                setColorSchemeAndUnsavedChanges={
+                  setColorSchemeAndUnsavedChanges
+                }
+                colorScheme={colorScheme}
+              />
+            )}
           </div>
-          {editMode && builderPaneType !== BUILDER_PANE_TYPE.NONE && (
-            <BuilderComponentPane
-              topOffset={HEADER_HEIGHT + (topLevelTabs ? TABS_HEIGHT : 0)}
-              showBuilderPane={showBuilderPane}
-              builderPaneType={builderPaneType}
-              setColorSchemeAndUnsavedChanges={setColorSchemeAndUnsavedChanges}
-              colorScheme={colorScheme}
-            />
-          )}
         </div>
         <ToastPresenter />
       </StickyContainer>

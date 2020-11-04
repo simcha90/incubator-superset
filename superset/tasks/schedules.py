@@ -18,7 +18,6 @@
 """Utility functions used across Superset"""
 
 import logging
-import textwrap
 import time
 import urllib.request
 from collections import namedtuple
@@ -29,7 +28,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
-    List,
+    NamedTuple,
     Optional,
     Tuple,
     TYPE_CHECKING,
@@ -38,21 +37,19 @@ from typing import (
 from urllib.error import URLError  # pylint: disable=ungrouped-imports
 
 import croniter
-import pandas as pd
 import simplejson as json
 from celery.app.task import Task
 from dateutil.tz import tzlocal
-from flask import current_app, render_template, Response, session, url_for
+from flask import current_app, render_template, url_for
 from flask_babel import gettext as __
-from flask_login import login_user
 from retry.api import retry_call
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver import chrome, firefox
-from sqlalchemy.orm import Session
-from werkzeug.http import parse_cookie
+from selenium.webdriver.remote.webdriver import WebDriver
+from sqlalchemy.exc import NoSuchColumnError, ResourceClosedError
 
 from superset import app, db, security_manager, thumbnail_cache
-from superset.extensions import celery_app
+from superset.extensions import celery_app, machine_auth_provider_factory
 from superset.models.alerts import Alert, AlertLog
 from superset.models.dashboard import Dashboard
 from superset.models.schedules import (
@@ -62,10 +59,11 @@ from superset.models.schedules import (
     SliceEmailReportFormat,
 )
 from superset.models.slice import Slice
-from superset.sql_parse import ParsedQuery
+from superset.tasks.alerts.observer import observe
+from superset.tasks.alerts.validator import get_validator_function
 from superset.tasks.slack_util import deliver_slack_msg
 from superset.utils.core import get_email_address_list, send_email_smtp
-from superset.utils.screenshots import ChartScreenshot
+from superset.utils.screenshots import ChartScreenshot, WebDriverProxy
 from superset.utils.urls import get_url_path
 
 # pylint: disable=too-few-public-methods
@@ -73,13 +71,14 @@ from superset.utils.urls import get_url_path
 if TYPE_CHECKING:
     # pylint: disable=unused-import
     from werkzeug.datastructures import TypeConversionDict
-
+    from flask_appbuilder.security.sqla.models import User
 
 # Globals
 config = app.config
 logger = logging.getLogger("tasks.email_reports")
 logger.setLevel(logging.INFO)
 
+stats_logger = current_app.config["STATS_LOGGER"]
 EMAIL_PAGE_RENDER_WAIT = config["EMAIL_PAGE_RENDER_WAIT"]
 WEBDRIVER_BASEURL = config["WEBDRIVER_BASEURL"]
 WEBDRIVER_BASEURL_USER_FRIENDLY = config["WEBDRIVER_BASEURL_USER_FRIENDLY"]
@@ -95,6 +94,19 @@ ReportContent = namedtuple(
         "slack_attachment",
     ],
 )
+
+
+class ScreenshotData(NamedTuple):
+    url: str  # url to chat/dashboard for this screenshot
+    image: Optional[bytes]  # bytes for the screenshot
+
+
+class AlertContent(NamedTuple):
+    label: str  # alert name
+    sql: str  # sql statement for alert
+    observation_value: str  # value from observation that triggered the alert
+    alert_url: str  # url to alert details
+    image_data: Optional[ScreenshotData]  # data for the alert screenshot
 
 
 def _get_email_to_and_bcc(
@@ -177,27 +189,6 @@ def _generate_report_content(
     return ReportContent(body, data, images, slack_message, screenshot)
 
 
-def _get_auth_cookies() -> List["TypeConversionDict[Any, Any]"]:
-    # Login with the user specified to get the reports
-    with app.test_request_context():
-        user = security_manager.find_user(config["EMAIL_REPORTS_USER"])
-        login_user(user)
-
-        # A mock response object to get the cookie information from
-        response = Response()
-        app.session_interface.save_session(app, session, response)
-
-    cookies = []
-
-    # Set the cookies in the driver
-    for name, value in response.headers:
-        if name.lower() == "set-cookie":
-            cookie = parse_cookie(value)
-            cookies.append(cookie["session"])
-
-    return cookies
-
-
 def _get_url_path(view: str, user_friendly: bool = False, **kwargs: Any) -> str:
     with app.test_request_context():
         base_url = (
@@ -206,44 +197,12 @@ def _get_url_path(view: str, user_friendly: bool = False, **kwargs: Any) -> str:
         return urllib.parse.urljoin(str(base_url), url_for(view, **kwargs))
 
 
-def create_webdriver() -> Union[
-    chrome.webdriver.WebDriver, firefox.webdriver.WebDriver
-]:
-    # Create a webdriver for use in fetching reports
-    if config["EMAIL_REPORTS_WEBDRIVER"] == "firefox":
-        driver_class = firefox.webdriver.WebDriver
-        options = firefox.options.Options()
-    elif config["EMAIL_REPORTS_WEBDRIVER"] == "chrome":
-        driver_class = chrome.webdriver.WebDriver
-        options = chrome.options.Options()
+def create_webdriver() -> WebDriver:
+    return WebDriverProxy(driver_type=config["WEBDRIVER_TYPE"]).auth(get_reports_user())
 
-    options.add_argument("--headless")
 
-    # Prepare args for the webdriver init
-    kwargs = dict(options=options)
-    kwargs.update(config["WEBDRIVER_CONFIGURATION"])
-
-    # Initialize the driver
-    driver = driver_class(**kwargs)
-
-    # Some webdrivers need an initial hit to the welcome URL
-    # before we set the cookie
-    welcome_url = _get_url_path("Superset.welcome")
-
-    # Hit the welcome URL and check if we were asked to login
-    driver.get(welcome_url)
-    elements = driver.find_elements_by_id("loginbox")
-
-    # This indicates that we were not prompted for a login box.
-    if not elements:
-        return driver
-
-    # Set the cookies in the driver
-    for cookie in _get_auth_cookies():
-        info = dict(name="session", value=cookie)
-        driver.add_cookie(info)
-
-    return driver
+def get_reports_user() -> "User":
+    return security_manager.find_user(config["EMAIL_REPORTS_USER"])
 
 
 def destroy_webdriver(
@@ -350,12 +309,15 @@ def _get_slice_data(slc: Slice, delivery_type: EmailDeliveryType) -> ReportConte
         "Superset.slice", slice_id=slc.id, user_friendly=True
     )
 
-    cookies = {}
-    for cookie in _get_auth_cookies():
-        cookies["session"] = cookie
+    # Login on behalf of the "reports" user in order to get cookies to deal with auth
+    auth_cookies = machine_auth_provider_factory.instance.get_auth_cookies(
+        get_reports_user()
+    )
+    # Build something like "session=cool_sess.val;other-cookie=awesome_other_cookie"
+    cookie_str = ";".join([f"{key}={val}" for key, val in auth_cookies.items()])
 
     opener = urllib.request.build_opener()
-    opener.addheaders.append(("Cookie", f"session={cookies['session']}"))
+    opener.addheaders.append(("Cookie", cookie_str))
     response = opener.open(slice_url)
     if response.getcode() != 200:
         raise URLError(response.getcode())
@@ -397,6 +359,24 @@ def _get_slice_data(slc: Slice, delivery_type: EmailDeliveryType) -> ReportConte
     )
 
     return ReportContent(body, data, None, slack_message, content)
+
+
+def _get_slice_screenshot(slice_id: int) -> ScreenshotData:
+    slice_obj = db.session.query(Slice).get(slice_id)
+
+    chart_url = get_url_path("Superset.slice", slice_id=slice_obj.id, standalone="true")
+    screenshot = ChartScreenshot(chart_url, slice_obj.digest)
+    image_url = _get_url_path(
+        "Superset.slice", user_friendly=True, slice_id=slice_obj.id,
+    )
+
+    user = security_manager.find_user(current_app.config["THUMBNAIL_SELENIUM_USER"])
+    image_data = screenshot.compute_and_cache(
+        user=user, cache=thumbnail_cache, force=True,
+    )
+
+    db.session.commit()
+    return ScreenshotData(image_url, image_data)
 
 
 def _get_slice_visualization(
@@ -534,28 +514,39 @@ def schedule_email_report(  # pylint: disable=unused-argument
     name="alerts.run_query",
     bind=True,
     soft_time_limit=config["EMAIL_ASYNC_TIME_LIMIT_SEC"],
+    # TODO: find cause of https://github.com/apache/incubator-superset/issues/10530
+    # and remove retry
+    autoretry_for=(NoSuchColumnError, ResourceClosedError,),
+    retry_kwargs={"max_retries": 5},
+    retry_backoff=True,
 )
 def schedule_alert_query(  # pylint: disable=unused-argument
     task: Task,
     report_type: ScheduleType,
     schedule_id: int,
     recipients: Optional[str] = None,
+    slack_channel: Optional[str] = None,
 ) -> None:
     model_cls = get_scheduler_model(report_type)
-    dbsession = db.create_scoped_session()
-    schedule = dbsession.query(model_cls).get(schedule_id)
 
-    # The user may have disabled the schedule. If so, ignore this
-    if not schedule or not schedule.active:
-        logger.info("Ignoring deactivated alert")
-        return
+    try:
+        schedule = db.session.query(model_cls).get(schedule_id)
 
-    if report_type == ScheduleType.alert:
-        if run_alert_query(schedule, dbsession):
-            # deliver_dashboard OR deliver_slice
+        # The user may have disabled the schedule. If so, ignore this
+        if not schedule or not schedule.active:
+            logger.info("Ignoring deactivated alert")
             return
-    else:
-        raise RuntimeError("Unknown report type")
+
+        if report_type == ScheduleType.alert:
+            evaluate_alert(schedule.id, schedule.label, recipients, slack_channel)
+        else:
+            raise RuntimeError("Unknown report type")
+    except NoSuchColumnError as column_error:
+        stats_logger.incr("run_alert_task.error.nosuchcolumnerror")
+        raise column_error
+    except ResourceClosedError as resource_error:
+        stats_logger.incr("run_alert_task.error.resourceclosederror")
+        raise resource_error
 
 
 class AlertState:
@@ -564,92 +555,152 @@ class AlertState:
     PASS = "pass"
 
 
-def deliver_alert(alert: Alert) -> None:
+def deliver_alert(
+    alert_id: int,
+    recipients: Optional[str] = None,
+    slack_channel: Optional[str] = None,
+) -> None:
+    """
+    Gathers alert information and sends out the alert
+    to its respective email and slack recipients
+    """
+
+    alert = db.session.query(Alert).get(alert_id)
+
     logging.info("Triggering alert: %s", alert)
-    img_data = None
-    images = {}
+
+    # Set all the values for the alert report
+    # Alternate values are used in the case of a test alert
+    # where an alert has no observations yet
+    recipients = recipients or alert.recipients
+    slack_channel = slack_channel or alert.slack_channel
+    sql = alert.sql_observer[0].sql if alert.sql_observer else ""
+    observation_value = (
+        str(alert.observations[-1].value) if alert.observations else "Value"
+    )
+
+    # TODO: add sql query results and validator information to alert content
     if alert.slice:
-
-        chart_url = get_url_path(
-            "Superset.slice", slice_id=alert.slice.id, standalone="true"
-        )
-        screenshot = ChartScreenshot(chart_url, alert.slice.digest)
-        cache_key = screenshot.cache_key()
-        image_url = get_url_path(
-            "ChartRestApi.screenshot", pk=alert.slice.id, digest=cache_key
-        )
-
-        user = security_manager.find_user(current_app.config["THUMBNAIL_SELENIUM_USER"])
-        img_data = screenshot.compute_and_cache(
-            user=user, cache=thumbnail_cache, force=True,
+        alert_content = AlertContent(
+            alert.label,
+            sql,
+            observation_value,
+            _get_url_path("AlertModelView.show", user_friendly=True, pk=alert_id),
+            _get_slice_screenshot(alert.slice.id),
         )
     else:
         # TODO: dashboard delivery!
-        image_url = "https://media.giphy.com/media/dzaUX7CAG0Ihi/giphy.gif"
+        alert_content = AlertContent(
+            alert.label,
+            sql,
+            observation_value,
+            _get_url_path("AlertModelView.show", user_friendly=True, pk=alert_id),
+            None,
+        )
 
-    # generate the email
-    subject = f"[Superset] Triggered alert: {alert.label}"
+    if recipients:
+        deliver_email_alert(alert_content, recipients)
+    if slack_channel:
+        deliver_slack_alert(alert_content, slack_channel)
+
+
+def deliver_email_alert(alert_content: AlertContent, recipients: str) -> None:
+    """Delivers an email alert to the given email recipients"""
+    subject = f"[Superset] Triggered alert: {alert_content.label}"
     deliver_as_group = False
     data = None
-    if img_data:
-        images = {"screenshot": img_data}
-    body = __(
-        textwrap.dedent(
-            """\
-            <h2>Alert: %(label)s</h2>
-            <img src="cid:screenshot" alt="%(label)s" />
-        """
-        ),
-        label=alert.label,
+    images = {}
+    # TODO(JasonD28): add support for emails with no screenshot
+    image_url = None
+    if alert_content.image_data:
+        image_url = alert_content.image_data.url
+        if alert_content.image_data.image:
+            images = {"screenshot": alert_content.image_data.image}
+
+    body = render_template(
+        "email/alert.txt",
+        alert_url=alert_content.alert_url,
+        label=alert_content.label,
+        sql=alert_content.sql,
+        observation_value=alert_content.observation_value,
         image_url=image_url,
     )
 
-    _deliver_email(alert.recipients, deliver_as_group, subject, body, data, images)
+    _deliver_email(recipients, deliver_as_group, subject, body, data, images)
 
 
-def run_alert_query(alert: Alert, dbsession: Session) -> Optional[bool]:
-    """
-    Execute alert.sql and return value if any rows are returned
-    """
-    logger.info("Processing alert ID: %i", alert.id)
-    database = alert.database
-    if not database:
-        logger.error("Alert database not preset")
-        return None
+def deliver_slack_alert(alert_content: AlertContent, slack_channel: str) -> None:
+    """Delivers a slack alert to the given slack channel"""
 
-    if not alert.sql:
-        logger.error("Alert SQL not preset")
-        return None
+    subject = __("[Alert] %(label)s", label=alert_content.label)
 
-    parsed_query = ParsedQuery(alert.sql)
-    sql = parsed_query.stripped()
+    image = None
+    if alert_content.image_data:
+        slack_message = render_template(
+            "slack/alert.txt",
+            label=alert_content.label,
+            sql=alert_content.sql,
+            observation_value=alert_content.observation_value,
+            url=alert_content.image_data.url,
+            alert_url=alert_content.alert_url,
+        )
+        image = alert_content.image_data.image
+    else:
+        slack_message = render_template(
+            "slack/alert_no_screenshot.txt",
+            label=alert_content.label,
+            sql=alert_content.sql,
+            observation_value=alert_content.observation_value,
+            alert_url=alert_content.alert_url,
+        )
+
+    deliver_slack_msg(
+        slack_channel, subject, slack_message, image,
+    )
+
+
+def evaluate_alert(
+    alert_id: int,
+    label: str,
+    recipients: Optional[str] = None,
+    slack_channel: Optional[str] = None,
+) -> None:
+    """Processes an alert to see if it should be triggered"""
+
+    logger.info("Processing alert ID: %i", alert_id)
 
     state = None
     dttm_start = datetime.utcnow()
 
-    df = pd.DataFrame()
     try:
-        logger.info("Evaluating SQL for alert %s", alert)
-        df = database.get_df(sql)
+        logger.info("Querying observers for alert <%s:%s>", alert_id, label)
+        error_msg = observe(alert_id)
+        if error_msg:
+            state = AlertState.ERROR
+            logging.error(error_msg)
     except Exception as exc:  # pylint: disable=broad-except
         state = AlertState.ERROR
         logging.exception(exc)
-        logging.error("Failed at evaluating alert: %s (%s)", alert.label, alert.id)
+        logging.error("Failed at query observers for alert: %s (%s)", label, alert_id)
 
     dttm_end = datetime.utcnow()
 
     if state != AlertState.ERROR:
-        alert.last_eval_dttm = datetime.utcnow()
-        if not df.empty:
-            # Looking for truthy cells
-            for row in df.to_records():
-                if any(row):
-                    state = AlertState.TRIGGER
-                    deliver_alert(alert)
-                    break
-        if not state:
+        # Don't validate alert on test runs since it may not be triggered
+        if recipients or slack_channel:
+            deliver_alert(alert_id, recipients, slack_channel)
+            state = AlertState.TRIGGER
+        # Validate during regular workflow and deliver only if triggered
+        elif validate_observations(alert_id, label):
+            deliver_alert(alert_id, recipients, slack_channel)
+            state = AlertState.TRIGGER
+        else:
             state = AlertState.PASS
 
+    db.session.commit()
+    alert = db.session.query(Alert).get(alert_id)
+    if state != AlertState.ERROR:
+        alert.last_eval_dttm = dttm_end
     alert.last_state = state
     alert.logs.append(
         AlertLog(
@@ -659,9 +710,25 @@ def run_alert_query(alert: Alert, dbsession: Session) -> Optional[bool]:
             state=state,
         )
     )
-    dbsession.commit()
+    db.session.commit()
 
-    return None
+
+def validate_observations(alert_id: int, label: str) -> bool:
+    """
+    Runs an alert's validators to check if it should be triggered or not
+    If so, return the name of the validator that returned true
+    """
+
+    logger.info("Validating observations for alert <%s:%s>", alert_id, label)
+
+    alert = db.session.query(Alert).get(alert_id)
+    if alert.validators:
+        validator = alert.validators[0]
+        validate = get_validator_function(validator.validator_type)
+        if validate and validate(alert.sql_observer[0], validator.config):
+            return True
+
+    return False
 
 
 def next_schedules(
@@ -705,17 +772,18 @@ def schedule_window(
     for schedule in schedules:
         logging.info("Processing schedule %s", schedule)
         args = (report_type, schedule.id)
+        schedule_start_at = start_at
 
         if (
             hasattr(schedule, "last_eval_dttm")
             and schedule.last_eval_dttm
             and schedule.last_eval_dttm > start_at
         ):
-            # start_at = schedule.last_eval_dttm + timedelta(seconds=1)
-            pass
+            schedule_start_at = schedule.last_eval_dttm + timedelta(seconds=1)
+
         # Schedule the job for the specified time window
         for eta in next_schedules(
-            schedule.crontab, start_at, stop_at, resolution=resolution
+            schedule.crontab, schedule_start_at, stop_at, resolution=resolution
         ):
             get_scheduler_action(report_type).apply_async(args, eta=eta)  # type: ignore
             break

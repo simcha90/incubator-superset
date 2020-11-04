@@ -18,7 +18,7 @@
  */
 import React from 'react';
 import { shallow, ShallowWrapper } from 'enzyme';
-import { Button } from 'react-bootstrap';
+import Button from 'src/components/Button';
 import Select from 'src/components/Select';
 import AddSliceContainer, {
   AddSliceContainerProps,
@@ -49,18 +49,18 @@ describe('AddSliceContainer', () => {
   });
 
   it('renders a select and a VizTypeControl', () => {
-    expect(wrapper.find(Select)).toHaveLength(1);
-    expect(wrapper.find(VizTypeControl)).toHaveLength(1);
+    expect(wrapper.find(Select)).toExist();
+    expect(wrapper.find(VizTypeControl)).toExist();
   });
 
   it('renders a button', () => {
-    expect(wrapper.find(Button)).toHaveLength(1);
+    expect(wrapper.find(Button)).toExist();
   });
 
   it('renders a disabled button if no datasource is selected', () => {
-    expect(
-      wrapper.find(Button).dive().find('.btn[disabled=true]'),
-    ).toHaveLength(1);
+    expect(wrapper.find(Button).dive().find({ disabled: true })).toHaveLength(
+      1,
+    );
   });
 
   it('renders an enabled button if datasource is selected', () => {
@@ -70,9 +70,9 @@ describe('AddSliceContainer', () => {
       datasourceId: datasourceValue.split('__')[0],
       datasourceType: datasourceValue.split('__')[1],
     });
-    expect(
-      wrapper.find(Button).dive().find('.btn[disabled=false]'),
-    ).toHaveLength(1);
+    expect(wrapper.find(Button).dive().find({ disabled: true })).toHaveLength(
+      0,
+    );
   });
 
   it('formats explore url', () => {

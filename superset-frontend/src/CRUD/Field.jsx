@@ -20,19 +20,19 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {
   FormGroup,
-  ControlLabel,
   HelpBlock,
   FormControl,
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
 
+import FormLabel from 'src/components/FormLabel';
 import './crud.less';
 
 const propTypes = {
   value: PropTypes.any.isRequired,
   label: PropTypes.string.isRequired,
-  descr: PropTypes.node,
+  description: PropTypes.node,
   fieldKey: PropTypes.string.isRequired,
   control: PropTypes.node.isRequired,
   onChange: PropTypes.func,
@@ -54,31 +54,38 @@ export default class Field extends React.PureComponent {
     this.props.onChange(this.props.fieldKey, newValue);
   }
   render() {
-    const { compact, value, label, control, descr, fieldKey } = this.props;
+    const {
+      compact,
+      value,
+      label,
+      control,
+      description,
+      fieldKey,
+    } = this.props;
     const hookedControl = React.cloneElement(control, {
       value,
       onChange: this.onChange,
     });
     return (
       <FormGroup controlId={fieldKey}>
-        <ControlLabel className="m-r-5">
+        <FormLabel className="m-r-5">
           {label || fieldKey}
-          {compact && descr && (
+          {compact && description && (
             <OverlayTrigger
               placement="right"
               overlay={
                 <Tooltip id="field-descr" bsSize="lg">
-                  {descr}
+                  {description}
                 </Tooltip>
               }
             >
               <i className="fa fa-info-circle m-l-5" />
             </OverlayTrigger>
           )}
-        </ControlLabel>
+        </FormLabel>
         {hookedControl}
         <FormControl.Feedback />
-        {!compact && descr && <HelpBlock>{descr}</HelpBlock>}
+        {!compact && description && <HelpBlock>{description}</HelpBlock>}
       </FormGroup>
     );
   }

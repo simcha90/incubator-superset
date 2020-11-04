@@ -21,8 +21,9 @@ import PropTypes from 'prop-types';
 import { FormControl, FormGroup, Row, Col } from 'react-bootstrap';
 import { t } from '@superset-ui/translation';
 
-import Button from '../../components/Button';
-import ModalTrigger from '../../components/ModalTrigger';
+import Button from 'src/components/Button';
+import FormLabel from 'src/components/FormLabel';
+import ModalTrigger from 'src/components/ModalTrigger';
 
 const propTypes = {
   query: PropTypes.object,
@@ -91,9 +92,9 @@ class SaveQuery extends React.PureComponent {
         <Row>
           <Col md={12}>
             <small>
-              <label className="control-label" htmlFor="embed-height">
+              <FormLabel className="control-label" htmlFor="embed-height">
                 {t('Label')}
-              </label>
+              </FormLabel>
             </small>
             <FormControl
               type="text"
@@ -107,9 +108,9 @@ class SaveQuery extends React.PureComponent {
         <Row>
           <Col md={12}>
             <small>
-              <label className="control-label" htmlFor="embed-height">
+              <FormLabel className="control-label" htmlFor="embed-height">
                 {t('Description')}
-              </label>
+              </FormLabel>
             </small>
             <FormControl
               componentClass="textarea"
@@ -134,7 +135,7 @@ class SaveQuery extends React.PureComponent {
           <Col md={12}>
             {isSaved && (
               <Button
-                bsStyle="primary"
+                buttonStyle="primary"
                 onClick={this.onUpdate}
                 className="m-r-3"
               >
@@ -142,7 +143,7 @@ class SaveQuery extends React.PureComponent {
               </Button>
             )}
             <Button
-              bsStyle={isSaved ? undefined : 'primary'}
+              buttonStyle={isSaved ? undefined : 'primary'}
               onClick={this.onSave}
               className="m-r-3"
             >
@@ -168,7 +169,7 @@ class SaveQuery extends React.PureComponent {
           backdrop="static"
           triggerNode={
             <Button
-              bsSize="small"
+              buttonSize="small"
               className="toggleSave"
               onClick={this.toggleSave}
             >

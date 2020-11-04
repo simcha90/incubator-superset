@@ -19,7 +19,7 @@
 import React from 'react';
 import { t } from '@superset-ui/translation';
 
-import Button, { ButtonProps } from '../../components/Button';
+import Button, { ButtonProps } from 'src/components/Button';
 
 const NO_OP = () => undefined;
 
@@ -42,20 +42,20 @@ const RunQueryActionButton = ({
   stopQuery = NO_OP,
   sql = '',
 }: Props) => {
-  const runBtnText = selectedText ? t('Run Selected Query') : t('Run');
+  const runBtnText = selectedText ? t('Run Selection') : t('Run');
   const btnStyle = selectedText ? 'warning' : 'primary';
   const shouldShowStopBtn =
     !!queryState && ['running', 'pending'].indexOf(queryState) > -1;
 
   const commonBtnProps: ButtonProps = {
-    bsSize: 'small',
-    bsStyle: btnStyle,
+    buttonSize: 'small',
+    buttonStyle: btnStyle,
     disabled: !dbId,
   };
 
   if (shouldShowStopBtn) {
     return (
-      <Button {...commonBtnProps} onClick={stopQuery}>
+      <Button {...commonBtnProps} cta onClick={stopQuery}>
         <i className="fa fa-stop" /> {t('Stop')}
       </Button>
     );
@@ -63,6 +63,7 @@ const RunQueryActionButton = ({
     return (
       <Button
         {...commonBtnProps}
+        cta
         onClick={() => runQuery(true)}
         key="run-async-btn"
         tooltip={t('Run query asynchronously (Ctrl + ↵)')}
@@ -75,6 +76,7 @@ const RunQueryActionButton = ({
   return (
     <Button
       {...commonBtnProps}
+      cta
       onClick={() => runQuery(false)}
       key="run-btn"
       tooltip={t('Run query synchronously (Ctrl + ↵)')}
