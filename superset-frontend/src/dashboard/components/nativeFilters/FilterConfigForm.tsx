@@ -24,7 +24,7 @@ import { AsyncSelect } from 'src/components/Select';
 import { useToasts } from 'src/messageToasts/enhancers/withToasts';
 import getClientErrorObject from 'src/utils/getClientErrorObject';
 import { AntCallback, Filter, FilterType } from './types';
-import { FilterTypeNames } from './utils.tsx';
+import { FilterTypeNames } from './utils';
 
 interface FilterConfigForm {
   dataset: any;
@@ -130,7 +130,10 @@ const FilterConfigForm = ({
         label={t('Filter Type')}
         rules={[{ required: true }]}
       >
-        <Select deaultValue={filterType} onChange={setFilterType as AntCallback}>
+        <Select
+          defaultValue={filterType}
+          onChange={setFilterType as AntCallback}
+        >
           {Object.values(FilterType).map(filterType => (
             <Select.Option value={filterType}>
               {FilterTypeNames[filterType]}
