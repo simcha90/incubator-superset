@@ -24,6 +24,8 @@ import {
   TAB_TYPE,
   TABS_TYPE,
 } from '../../util/componentTypes';
+import { t } from '@superset-ui/core';
+import { FilterType } from './types';
 
 export const isShowTypeInTree = ({ type, meta }: LayoutItem, charts?: Charts) =>
   (type === TABS_TYPE ||
@@ -90,4 +92,9 @@ export const findFilterScope = (
     rootPath: [...new Set(rootPath)],
     excluded,
   };
+};
+
+export const FilterTypeNames = {
+  [FilterType.text]: t('Text'),
+  [FilterType.timeRange]: t('Time Range'),
 };

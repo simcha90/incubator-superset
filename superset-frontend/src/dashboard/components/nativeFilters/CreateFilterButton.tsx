@@ -24,7 +24,7 @@ import shortid from 'shortid';
 import { Button, Form } from 'src/common/components';
 import { StyledModal } from 'src/common/components/Modal';
 import { createFilter } from 'src/dashboard/actions/nativeFilters';
-import { Filter, NativeFiltersForm, Scope, Scoping } from './types';
+import { Filter, NativeFiltersForm, Scope, Scoping, FilterType } from './types';
 import FilterConfigForm from './FilterConfigForm';
 import FiltersList from './FiltersList';
 import { DASHBOARD_ROOT_ID } from '../../util/constants';
@@ -33,6 +33,8 @@ import { DASHBOARD_ROOT_ID } from '../../util/constants';
 
 interface FilterCreateModalProps {
   isOpen: boolean;
+  filterType: FilterType;
+  setFilterType: Function;
   setFilterScope: Function;
   save: (values: Record<string, any>) => Promise<void>;
   onCancel: () => void;
@@ -45,6 +47,8 @@ function FilterCreateModal({
   save,
   onCancel,
   setFilterScope,
+  filterType,
+  setFilterType,
 }: FilterCreateModalProps) {
   const [form] = Form.useForm();
 
@@ -87,6 +91,8 @@ function FilterCreateModal({
       />
       <FilterConfigForm
         dataset={dataset}
+        filterType={filterType}
+        setFilterType={setFilterType}
         setDataset={setDataset}
         setFilterScope={setFilterScope}
         key={filterToEdit?.id}
@@ -106,6 +112,7 @@ const CreateFilterButton: React.FC<ButtonProps> = ({
   children,
   ...buttonProps
 }) => {
+  const [filterType, setFilterType] = useState<FilterType>(FilterType.text);
   const [isOpen, setOpen] = useState(false);
   const [filterScope, setFilterScope] = useState<Scope>({
     rootPath: [],
@@ -129,7 +136,7 @@ const CreateFilterButton: React.FC<ButtonProps> = ({
       createFilter({
         id: generateFilterId(),
         name: values.name,
-        type: 'text',
+        type: filterType,
         // for now there will only ever be one target
         targets: [
           {
@@ -153,6 +160,8 @@ const CreateFilterButton: React.FC<ButtonProps> = ({
       <FilterCreateModal
         isOpen={isOpen}
         save={submit}
+        setFilterType={setFilterType}
+        filterType={filterType}
         onCancel={close}
         setFilterScope={setFilterScope}
       />

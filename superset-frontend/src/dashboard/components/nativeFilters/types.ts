@@ -47,6 +47,8 @@ export interface Scope {
   excluded: number[];
 }
 
+export type AntCallback = (value: string) => void
+
 /** The target of a filter is the datasource/column being filtered */
 export interface Target {
   datasetId: number;
@@ -57,7 +59,10 @@ export interface Target {
   // clarityColumns?: Column[];
 }
 
-export type FilterType = 'text' | 'date';
+export enum FilterType {
+  text = 'text',
+  timeRange = 'timeRange',
+}
 
 /**
  * This is a filter configuration object, stored in the dashboard's json metadata.
