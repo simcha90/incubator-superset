@@ -26,6 +26,8 @@ import getClientErrorObject from 'src/utils/getClientErrorObject';
 import { AntCallback, Filter, FilterType, Scoping } from './types';
 import ScopingTree from './ScopingTree';
 import { FilterTypeNames } from './utils';
+import TextFilter from './filterTypes/TextFilter';
+import TimeRangeFilter from './filterTypes/TimeRangeFilter';
 
 interface FilterConfigForm {
   setFilterScope: Function;
@@ -102,6 +104,11 @@ const ScopingTreeNote = styled.div`
   margin-bottom: 10px;
 `;
 
+const filterTypeElements = {
+  [FilterType.text]: TextFilter,
+  [FilterType.timeRange]: TimeRangeFilter,
+};
+
 const FilterConfigForm = ({
   dataset,
   setDataset,
@@ -113,6 +120,7 @@ const FilterConfigForm = ({
   edit,
 }: FilterConfigForm) => {
   const [scoping, setScoping] = useState<Scoping>(Scoping.all);
+  const FilterTypeElement = filterTypeElements[filterType];
   return (
     <Form
       form={form}
@@ -134,22 +142,6 @@ const FilterConfigForm = ({
       >
         <Input />
       </Form.Item>
-      <Form.Item
-        name="filterType"
-        label={t('Filter Type')}
-        rules={[{ required: true }]}
-      >
-        <Select
-          defaultValue={filterType}
-          onChange={setFilterType as AntCallback}
-        >
-          {Object.values(FilterType).map(filterType => (
-            <Select.Option value={filterType}>
-              {FilterTypeNames[filterType]}
-            </Select.Option>
-          ))}
-        </Select>
-      </Form.Item>
       <Form.Item name="dataset" label="Datasource" rules={[{ required: true }]}>
         <SupersetResourceSelect
           resource="dataset"
@@ -168,9 +160,21 @@ const FilterConfigForm = ({
       >
         <ColumnSelect datasetId={dataset?.value} />
       </Form.Item>
-      <Form.Item name="defaultValue" label="Default Value">
-        <Input />
+      <Form.Item
+        name="filterType"
+        initialValue={filterType}
+        label={t('Filter Type')}
+        rules={[{ required: true }]}
+      >
+        <Select onChange={setFilterType as AntCallback}>
+          {Object.values(FilterType).map(filterType => (
+            <Select.Option value={filterType}>
+              {FilterTypeNames[filterType]}
+            </Select.Option>
+          ))}
+        </Select>
       </Form.Item>
+      <FilterTypeElement form={form} />
       <Form.Item name="isInstant" label={t('Apply changes instantly')}>
         <Input type="checkbox" />
       </Form.Item>

@@ -24,7 +24,9 @@ export enum Scoping {
   specific,
 }
 
-export interface NativeFiltersForm {
+type DefaultValue = string[] | number[] | object | string | null;
+
+export type NativeFiltersForm = {
   scoping: Scoping;
   name: string;
   dataset: {
@@ -34,8 +36,8 @@ export interface NativeFiltersForm {
   column: {
     value: Column;
   };
-  defaultValue: string;
-}
+  defaultValue: DefaultValue;
+};
 
 export interface Column {
   name: string;
@@ -47,7 +49,7 @@ export interface Scope {
   excluded: number[];
 }
 
-export type AntCallback = (value: string) => void
+export type AntCallback = (value: string | number) => void;
 
 /** The target of a filter is the datasource/column being filtered */
 export interface Target {
@@ -75,7 +77,7 @@ export interface Filter {
   // for now there will only ever be one target
   // when multiple targets are supported, change this to Target[]
   targets: [Target];
-  defaultValue: string;
+  defaultValue: DefaultValue;
   scope: Scope;
   isInstant: boolean;
 }

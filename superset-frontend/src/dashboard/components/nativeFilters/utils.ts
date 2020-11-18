@@ -17,15 +17,21 @@
  * under the License.
  */
 
-import { Layout, LayoutItem, TreeItem, Scope, Charts } from './types';
+import { t } from '@superset-ui/core';
+import {
+  Layout,
+  LayoutItem,
+  TreeItem,
+  Scope,
+  Charts,
+  FilterType,
+} from './types';
 import {
   CHART_TYPE,
   DASHBOARD_ROOT_TYPE,
   TAB_TYPE,
   TABS_TYPE,
 } from '../../util/componentTypes';
-import { t } from '@superset-ui/core';
-import { FilterType } from './types';
 
 export const isShowTypeInTree = ({ type, meta }: LayoutItem, charts?: Charts) =>
   (type === TABS_TYPE ||

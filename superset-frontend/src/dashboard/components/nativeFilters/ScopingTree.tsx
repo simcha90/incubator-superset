@@ -37,12 +37,12 @@ const ScopingTree: FC<ScopingTreeProps> = ({ setFilterScope }) => {
   const [autoExpandParent, setAutoExpandParent] = useState<boolean>(true);
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
 
-  const onExpand = (expandedKeys: string[]) => {
+  const handleExpand = (expandedKeys: string[]) => {
     setExpandedKeys(expandedKeys);
     setAutoExpandParent(false);
   };
 
-  const onCheck = (checkedKeys: string[]) => {
+  const handleCheck = (checkedKeys: string[]) => {
     setCheckedKeys(checkedKeys);
     setFilterScope(findFilterScope(checkedKeys, layout));
   };
@@ -51,10 +51,10 @@ const ScopingTree: FC<ScopingTreeProps> = ({ setFilterScope }) => {
     <Tree
       checkable
       selectable={false}
-      onExpand={onExpand}
+      onExpand={handleExpand}
       expandedKeys={expandedKeys}
       autoExpandParent={autoExpandParent}
-      onCheck={onCheck}
+      onCheck={handleCheck}
       checkedKeys={checkedKeys}
       treeData={treeData}
     />
