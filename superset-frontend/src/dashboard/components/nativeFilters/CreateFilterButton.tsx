@@ -25,8 +25,7 @@ import { Button, Form } from 'src/common/components';
 import { StyledModal } from 'src/common/components/Modal';
 import { createFilter } from 'src/dashboard/actions/nativeFilters';
 import { DASHBOARD_ROOT_ID } from 'src/dashboard/util/constants';
-import value from '*.png';
-import { Filter } from './types';
+import { Filter, FilterType } from './types';
 import FilterConfigForm from './FilterConfigForm';
 import FiltersList from './FiltersList';
 
@@ -34,13 +33,21 @@ import FiltersList from './FiltersList';
 
 interface FilterCreateModalProps {
   isOpen: boolean;
+  filterType: FilterType;
+  setFilterType: Function;
   save: (values: Record<string, any>) => Promise<void>;
   onCancel: () => void;
 }
 
 type FiltersToEdit = Filter;
 
-function FilterCreateModal({ isOpen, save, onCancel }: FilterCreateModalProps) {
+function FilterCreateModal({
+  isOpen,
+  save,
+  filterType,
+  setFilterType,
+  onCancel,
+}: FilterCreateModalProps) {
   const [form] = Form.useForm();
 
   // antd form manages the dataset value,
@@ -82,6 +89,8 @@ function FilterCreateModal({ isOpen, save, onCancel }: FilterCreateModalProps) {
       />
       <FilterConfigForm
         dataset={dataset}
+        filterType={filterType}
+        setFilterType={setFilterType}
         setDataset={setDataset}
         key={filterToEdit?.id}
         form={form}
@@ -100,6 +109,7 @@ const CreateFilterButton: React.FC<ButtonProps> = ({
   children,
   ...buttonProps
 }) => {
+  const [filterType, setFilterType] = useState<FilterType>(FilterType.text);
   const [isOpen, setOpen] = useState(false);
   const dispatch = useDispatch();
 
@@ -112,7 +122,7 @@ const CreateFilterButton: React.FC<ButtonProps> = ({
       createFilter({
         id: generateFilterId(),
         name: values.name,
-        type: 'text',
+        type: filterType,
         // for now there will only ever be one target
         targets: [
           {
@@ -136,7 +146,13 @@ const CreateFilterButton: React.FC<ButtonProps> = ({
       <Button {...buttonProps} onClick={() => setOpen(true)}>
         {children}
       </Button>
-      <FilterCreateModal isOpen={isOpen} save={submit} onCancel={close} />
+      <FilterCreateModal
+        isOpen={isOpen}
+        save={submit}
+        setFilterType={setFilterType}
+        filterType={filterType}
+        onCancel={close}
+      />
     </>
   );
 };

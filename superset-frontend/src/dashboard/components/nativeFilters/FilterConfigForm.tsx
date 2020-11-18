@@ -19,14 +19,17 @@
 import React from 'react';
 import { SupersetClient, t } from '@superset-ui/core';
 import SupersetResourceSelect from 'src/components/SupersetResourceSelect';
-import { Form, Input } from 'src/common/components';
+import { Form, Input, Select } from 'src/common/components';
 import { AsyncSelect } from 'src/components/Select';
 import { useToasts } from 'src/messageToasts/enhancers/withToasts';
 import getClientErrorObject from 'src/utils/getClientErrorObject';
-import { Filter } from './types';
+import { AntCallback, Filter, FilterType } from './types';
+import { FilterTypeNames } from './utils.tsx';
 
 interface FilterConfigForm {
   dataset: any;
+  setFilterType: Function;
+  filterType: FilterType;
   setDataset: (arg0: string) => void;
   filterToEdit: {
     filter: Filter;
@@ -95,6 +98,8 @@ function ColumnSelect({ datasetId, value, onChange }: ColumnSelectProps) {
 const FilterConfigForm = ({
   dataset,
   setDataset,
+  setFilterType,
+  filterType,
   filterToEdit,
   form,
   edit,
@@ -119,6 +124,19 @@ const FilterConfigForm = ({
         initialValue={edit ? filterToEdit?.filter?.name : 'test'}
       >
         <Input />
+      </Form.Item>
+      <Form.Item
+        name="filterType"
+        label={t('Filter Type')}
+        rules={[{ required: true }]}
+      >
+        <Select deaultValue={filterType} onChange={setFilterType as AntCallback}>
+          {Object.values(FilterType).map(filterType => (
+            <Select.Option value={filterType}>
+              {FilterTypeNames[filterType]}
+            </Select.Option>
+          ))}
+        </Select>
       </Form.Item>
       <Form.Item name="dataset" label="Datasource" rules={[{ required: true }]}>
         <SupersetResourceSelect
