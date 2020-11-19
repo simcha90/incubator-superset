@@ -29,4 +29,4 @@ const TextFilter = () => {
   );
 };
 
-export default TextFilter
+export default TextFilter;

@@ -16,22 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectFilterOption } from 'src/dashboard/actions/nativeFilters';
 import { getInitialFilterState } from 'src/dashboard/reducers/nativeFilters';
 import { t } from '@superset-ui/core';
-import {
-  Charts,
-  Filter,
-  FilterState,
-  Layout,
-  RootState,
-  TreeItem,
-} from './types';
+import { Filter, FilterState, TreeItem } from './types';
 import { DASHBOARD_ROOT_ID } from '../../util/constants';
 import { DASHBOARD_ROOT_TYPE } from '../../util/componentTypes';
 import { buildTree } from './utils';
+import { Charts, Layout, RootState } from '../../reducers/types';
 
 export function useFilterConfigurations() {
   return useSelector<any, Filter[]>(
@@ -53,6 +47,14 @@ export function useFilterSetter(id: string) {
     [id, dispatch],
   );
 }
+
+const tree = {
+  children: [],
+  key: DASHBOARD_ROOT_ID,
+  type: DASHBOARD_ROOT_TYPE,
+  title: t('All Panels'),
+};
+
 export function useFilterScopeTree(): {
   treeData: [TreeItem];
   layout: Layout;
@@ -63,12 +65,8 @@ export function useFilterScopeTree(): {
 
   const charts = useSelector<RootState, Charts>(({ charts }) => charts);
 
-  const tree = {
-    children: [],
-    key: DASHBOARD_ROOT_ID,
-    type: DASHBOARD_ROOT_TYPE,
-    title: t('All Panels'),
-  };
-  buildTree(layout[DASHBOARD_ROOT_ID], tree, layout, charts);
+  useMemo(() => {
+    buildTree(layout[DASHBOARD_ROOT_ID], tree, layout, charts);
+  }, [charts, layout]);
   return { treeData: [tree], layout };
 }

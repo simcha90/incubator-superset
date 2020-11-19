@@ -18,20 +18,14 @@
  */
 
 import { t } from '@superset-ui/core';
-import {
-  Layout,
-  LayoutItem,
-  TreeItem,
-  Scope,
-  Charts,
-  FilterType,
-} from './types';
+import { TreeItem, Scope, FilterType } from './types';
 import {
   CHART_TYPE,
   DASHBOARD_ROOT_TYPE,
   TAB_TYPE,
   TABS_TYPE,
 } from '../../util/componentTypes';
+import { Charts, Layout, LayoutItem } from '../../reducers/types';
 
 export const isShowTypeInTree = ({ type, meta }: LayoutItem, charts?: Charts) =>
   (type === TABS_TYPE ||
@@ -61,6 +55,7 @@ export const buildTree = (
   );
 };
 
+// Looking for first common parent for selected charts/tabs/tab
 export const findFilterScope = (
   checkedKeys: string[],
   layout: Layout,
@@ -71,11 +66,14 @@ export const findFilterScope = (
       excluded: [],
     };
   }
+  // Get arrays of parents for selected charts
   const checkedItemParents = checkedKeys.map(key =>
     (layout[key].parents || []).filter(parent =>
       isShowTypeInTree(layout[parent]),
     ),
   );
+  // Sort arrays of parents to get first shortest array of parents,
+  // that means on it's level of parents located common parent, from this place parents start be different
   checkedItemParents.sort((p1, p2) => p1.length - p2.length);
   const rootPath = checkedItemParents.map(
     parents => parents[checkedItemParents[0].length - 1],
@@ -85,6 +83,8 @@ export const findFilterScope = (
   const exclude = (parent: string, item: string) =>
     rootPath.includes(parent) && !checkedKeys.includes(item);
 
+  // looking for charts to be excluded: iterate over all charts
+  // and looking for charts that have one of their parents in `rootPath` and not in selected items
   Object.entries(layout).forEach(([key, value]) => {
     if (
       value.type === CHART_TYPE &&

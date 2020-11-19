@@ -47,9 +47,11 @@ export {
   Popover,
   Select,
   Skeleton,
+  Switch,
   Tabs,
   Tooltip,
 } from 'antd';
+export { InfoCircleOutlined, SwapRightOutlined } from '@ant-design/icons';
 export { TreeProps } from 'antd/lib/tree';
 export { FormInstance } from 'antd/lib/form';
 

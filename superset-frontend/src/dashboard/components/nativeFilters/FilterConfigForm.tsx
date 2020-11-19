@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { Fragment, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { styled, SupersetClient, t } from '@superset-ui/core';
 import SupersetResourceSelect from 'src/components/SupersetResourceSelect';
 import { Form, Input, Select, Radio, Typography } from 'src/common/components';
@@ -27,7 +27,8 @@ import { AntCallback, Filter, FilterType, Scoping } from './types';
 import ScopingTree from './ScopingTree';
 import { FilterTypeNames } from './utils';
 import TextFilter from './filterTypes/TextFilter';
-import TimeRangeFilter from './filterTypes/TimeRangeFilter';
+import TimeRangeFilter from './filterTypes/TimeRangeFilter/TimeRangeFilter';
+import { TimeFrames } from './filterTypes/TimeRangeFilter/types';
 
 interface FilterConfigForm {
   setFilterScope: Function;
@@ -109,6 +110,14 @@ const filterTypeElements = {
   [FilterType.timeRange]: TimeRangeFilter,
 };
 
+const defaultValuesPerFilterType = {
+  [FilterType.text]: '',
+  [FilterType.timeRange]: {
+    timeRangeType: TimeFrames.noTimeRange,
+    timeRange: TimeFrames.noTimeRange,
+  },
+};
+
 const FilterConfigForm = ({
   dataset,
   setDataset,
@@ -121,6 +130,11 @@ const FilterConfigForm = ({
 }: FilterConfigForm) => {
   const [scoping, setScoping] = useState<Scoping>(Scoping.all);
   const FilterTypeElement = filterTypeElements[filterType];
+  useEffect(() => {
+    form.setFieldsValue({
+      defaultValue: defaultValuesPerFilterType[filterType],
+    });
+  }, [filterType, form]);
   return (
     <Form
       form={form}
@@ -168,7 +182,7 @@ const FilterConfigForm = ({
       >
         <Select onChange={setFilterType as AntCallback}>
           {Object.values(FilterType).map(filterType => (
-            <Select.Option value={filterType}>
+            <Select.Option value={filterType} key={filterType}>
               {FilterTypeNames[filterType]}
             </Select.Option>
           ))}
@@ -187,6 +201,12 @@ const FilterConfigForm = ({
       <Form.Item name="isRequired" label={t('Required')}>
         <Input type="checkbox" />
       </Form.Item>
+      <Form.Item
+        name="searchAllFiltersOptions"
+        label={t('Search All Filter Options')}
+      >
+        <Input type="checkbox" />
+      </Form.Item>
       <Typography.Title level={5}>{t('Scoping')}</Typography.Title>
       <Form.Item name="scoping" initialValue={scoping}>
         <Radio.Group
@@ -200,15 +220,15 @@ const FilterConfigForm = ({
           </Radio>
         </Radio.Group>
       </Form.Item>
+      <ScopingTreeNote>
+        <Typography.Text type="secondary">
+          {scoping === Scoping.specific
+            ? t('Only selected panels will be affected by this filter')
+            : t('All panels with this column will be affected by this filter')}
+        </Typography.Text>
+      </ScopingTreeNote>
       {scoping === Scoping.specific && (
-        <Fragment>
-          <ScopingTreeNote>
-            <Typography.Text type="secondary">
-              {t('Only selected panels will be affected by this filter')}
-            </Typography.Text>
-          </ScopingTreeNote>
-          <ScopingTree setFilterScope={setFilterScope} />
-        </Fragment>
+        <ScopingTree setFilterScope={setFilterScope} />
       )}
     </Form>
   );
