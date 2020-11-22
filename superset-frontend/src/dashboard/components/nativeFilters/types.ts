@@ -17,7 +17,6 @@
  * under the License.
  */
 import { QueryObjectFilterClause } from '@superset-ui/core';
-import componentTypes from 'src/dashboard/util/componentTypes';
 
 export enum Scoping {
   all,
