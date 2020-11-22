@@ -19,7 +19,7 @@
 import React from 'react';
 import { styled } from '@superset-ui/core';
 // eslint-disable-next-line no-restricted-imports
-import { Dropdown, Skeleton, Menu as AntdMenu } from 'antd';
+import { Dropdown, Skeleton, Menu as AntdMenu, Input as AntdInput } from 'antd';
 import { DropDownProps } from 'antd/lib/dropdown';
 
 /*
@@ -39,7 +39,6 @@ export {
   Radio,
   InputNumber,
   Empty,
-  Input,
   Modal,
   Typography,
   Space,
@@ -64,11 +63,26 @@ export const MenuItem = styled(AntdMenu.Item)`
     height: ${({ theme }) => theme.gridUnit * 7}px;
     line-height: ${({ theme }) => theme.gridUnit * 7}px;
   }
+
+  &.ant-menu-item,
+  &.ant-dropdown-menu-item {
+    span[role='button'] {
+      display: inline-block;
+      width: 100%;
+    }
+  }
 `;
 
 export const Menu = Object.assign(AntdMenu, {
   Item: MenuItem,
 });
+
+export const Input = styled(AntdInput)`
+  &[type="text"], &[type="textarea"] {
+    border: 1px solid ${({ theme }) => theme.colors.secondary.light3};
+    border-radius: ${({ theme }) => theme.gridUnit}px;
+  }
+`;
 
 export const NoAnimationDropdown = (props: DropDownProps) => (
   <Dropdown

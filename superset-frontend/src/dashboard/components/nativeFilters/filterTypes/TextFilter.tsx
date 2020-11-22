@@ -18,12 +18,21 @@
  */
 
 import { Form, Input } from 'src/common/components';
-import React from 'react';
+import React, { FC } from 'react';
 import { t } from '@superset-ui/core';
+import { Filter } from '../types';
 
-const TextFilter = () => {
+type TextFilterProps = {
+  filterToEdit?: Filter;
+};
+
+const TextFilter: FC<TextFilterProps> = ({ filterToEdit }) => {
   return (
-    <Form.Item name="defaultValue" label={t('Default Value')}>
+    <Form.Item
+      name="defaultValue"
+      label={t('Default Value')}
+      initialValue={filterToEdit?.defaultValue}
+    >
       <Input />
     </Form.Item>
   );

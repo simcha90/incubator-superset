@@ -21,15 +21,38 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectFilterOption } from 'src/dashboard/actions/nativeFilters';
 import { getInitialFilterState } from 'src/dashboard/reducers/nativeFilters';
 import { t } from '@superset-ui/core';
-import { Filter, FilterState, TreeItem } from './types';
+import { Filter, FilterConfiguration, FilterState, TreeItem } from './types';
 import { DASHBOARD_ROOT_ID } from '../../util/constants';
 import { DASHBOARD_ROOT_TYPE } from '../../util/componentTypes';
 import { buildTree } from './utils';
 import { Charts, Layout, RootState } from '../../reducers/types';
 
-export function useFilterConfigurations() {
-  return useSelector<any, Filter[]>(
-    state => state.dashboardInfo.metadata.filter_configuration || [],
+const defaultFilterConfiguration = {
+  filters: {},
+  filterOrder: [],
+};
+
+export function useFilterConfiguration() {
+  return useSelector<any, FilterConfiguration>(
+    state =>
+      state.dashboardInfo.metadata.filter_configuration ||
+      defaultFilterConfiguration,
+  );
+}
+
+/**
+ * returns the dashboard's filter configuration,
+ * converted into a map of id -> filter
+ */
+export function useFilterConfigMap() {
+  const filterConfig = useFilterConfiguration();
+  return useMemo(
+    () =>
+      filterConfig.reduce((acc: Record<string, Filter>, filter: Filter) => {
+        acc[filter.id] = filter;
+        return acc;
+      }, {} as Record<string, Filter>),
+    [filterConfig],
   );
 }
 

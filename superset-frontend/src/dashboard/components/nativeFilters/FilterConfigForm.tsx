@@ -16,32 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { styled, SupersetClient, t } from '@superset-ui/core';
 import SupersetResourceSelect from 'src/components/SupersetResourceSelect';
-import { Form, Input, Select, Radio, Typography } from 'src/common/components';
+import {
+  Form,
+  FormInstance,
+  Input,
+  Radio,
+  Select,
+  Typography,
+} from 'src/common/components';
 import { AsyncSelect } from 'src/components/Select';
 import { useToasts } from 'src/messageToasts/enhancers/withToasts';
 import getClientErrorObject from 'src/utils/getClientErrorObject';
-import { AntCallback, Filter, FilterType, Scoping } from './types';
+import { Filter, FilterType, Scoping } from './types';
 import ScopingTree from './ScopingTree';
 import { FilterTypeNames } from './utils';
 import TextFilter from './filterTypes/TextFilter';
 import TimeRangeFilter from './filterTypes/TimeRangeFilter/TimeRangeFilter';
 import { TimeFrames } from './filterTypes/TimeRangeFilter/types';
 
-interface FilterConfigForm {
-  setFilterScope: Function;
-  dataset: any;
-  setFilterType: Function;
-  filterType: FilterType;
-  setDataset: (arg0: string) => void;
-  filterToEdit: {
-    filter: Filter;
-    index: number;
-  };
-  form: any;
-  edit: boolean;
+interface FilterConfigFormProps {
+  filterId: string;
+  filterToEdit?: Filter;
+  form: FormInstance;
 }
 
 type DatasetSelectValue = {
@@ -65,6 +64,7 @@ const datasetToSelectOption = (item: any): DatasetSelectValue => ({
   label: item.table_name,
 });
 
+/** Special purpose AsyncSelect that selects a column from a dataset */
 function ColumnSelect({ datasetId, value, onChange }: ColumnSelectProps) {
   const { addDangerToast } = useToasts();
   function loadOptions() {
@@ -118,23 +118,21 @@ const defaultValuesPerFilterType = {
   },
 };
 
-const FilterConfigForm = ({
-  dataset,
-  setDataset,
-  setFilterType,
-  filterType,
-  setFilterScope,
+const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
+  filterId,
   filterToEdit,
   form,
-  edit,
-}: FilterConfigForm) => {
+}) => {
   const [scoping, setScoping] = useState<Scoping>(Scoping.all);
+  const [filterType, setFilterType] = useState<FilterType>(
+    filterToEdit?.type || FilterType.text,
+  );
   const FilterTypeElement = filterTypeElements[filterType];
-  useEffect(() => {
-    form.setFieldsValue({
-      defaultValue: defaultValuesPerFilterType[filterType],
-    });
-  }, [filterType, form]);
+
+  const [datasetId, setDatasetId] = useState<number | undefined>(
+    filterToEdit?.targets[0].datasetId,
+  );
+
   return (
     <Form
       form={form}
@@ -142,17 +140,17 @@ const FilterConfigForm = ({
         // un-set the "column" value whenever the dataset changes.
         // Doing this in the onChange handler of the
         // dataset selector doesn't work for some reason.
-        if ('dataset' in changes && changes.dataset?.value !== dataset?.value) {
+        if ('dataset' in changes && changes.dataset?.value !== datasetId) {
           form.setFieldsValue({ column: null });
-          setDataset(changes.dataset);
+          setDatasetId(changes.dataset.value);
         }
       }}
     >
       <Form.Item
-        name={['filterName', filterToEdit.index, 'name']}
+        name="name"
         label="Filter Name"
+        initialValue={filterToEdit?.name}
         rules={[{ required: true }]}
-        initialValue={edit ? filterToEdit?.filter?.name : 'test'}
       >
         <Input />
       </Form.Item>
@@ -166,21 +164,30 @@ const FilterConfigForm = ({
       </Form.Item>
       <Form.Item
         // don't show the column select unless we have a dataset
-        style={{ display: dataset ? undefined : 'none' }}
-        name={['column', 'target', 0, 'datasetId']}
+        style={{ display: datasetId === undefined ? 'none' : undefined }}
+        name="column"
+        initialValue={
+          filterToEdit?.targets?.length && filterToEdit?.targets[0]?.datasetId
+        }
         label="Field"
         rules={[{ required: true }]}
-        initialValue={filterToEdit?.filter?.targets[0]?.datasetId}
       >
-        <ColumnSelect datasetId={dataset?.value} />
+        <ColumnSelect datasetId={datasetId} />
       </Form.Item>
       <Form.Item
-        name="filterType"
-        initialValue={filterType}
+        name="type"
+        initialValue={filterToEdit?.type}
         label={t('Filter Type')}
         rules={[{ required: true }]}
       >
-        <Select onChange={setFilterType as AntCallback}>
+        <Select
+          onChange={type => {
+            setFilterType(type as FilterType);
+            form.setFieldsValue({
+              defaultValue: defaultValuesPerFilterType[type as FilterType],
+            });
+          }}
+        >
           {Object.values(FilterType).map(filterType => (
             <Select.Option value={filterType} key={filterType}>
               {FilterTypeNames[filterType]}
@@ -188,7 +195,7 @@ const FilterConfigForm = ({
           ))}
         </Select>
       </Form.Item>
-      <FilterTypeElement form={form} />
+      <FilterTypeElement form={form} filterToEdit={filterToEdit} />
       <Form.Item name="isInstant" label={t('Apply changes instantly')}>
         <Input type="checkbox" />
       </Form.Item>
@@ -228,7 +235,7 @@ const FilterConfigForm = ({
         </Typography.Text>
       </ScopingTreeNote>
       {scoping === Scoping.specific && (
-        <ScopingTree setFilterScope={setFilterScope} />
+        <ScopingTree form={form} filterToEdit={filterToEdit} />
       )}
     </Form>
   );

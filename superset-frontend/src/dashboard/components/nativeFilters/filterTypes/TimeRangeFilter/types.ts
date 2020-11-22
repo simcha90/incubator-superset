@@ -23,6 +23,10 @@ export enum TimeRelations {
   last = 'last',
   next = 'next',
 }
+export const TimeRelationsMap = Object.entries(TimeRelations).reduce(
+  (acc, [key, value]) => ({ ...acc, [value]: key }),
+  {},
+);
 
 export const TimeRelationNames = {
   [TimeRelations.last]: t('Last'),

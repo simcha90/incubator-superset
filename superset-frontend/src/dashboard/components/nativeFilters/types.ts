@@ -22,20 +22,25 @@ export enum Scoping {
   specific,
 }
 
-type DefaultValue = string[] | number[] | object | string | null;
+type DefaultValue = any;
 
-export type NativeFiltersForm = {
-  scoping: Scoping;
+export interface NativeFiltersFormItem {
+  scope: Scope;
   name: string;
   dataset: {
     value: number;
   };
+  type: FilterType;
   isInstant: boolean;
   column: {
     value: Column;
   };
   defaultValue: DefaultValue;
-};
+}
+
+export interface NativeFiltersForm {
+  filters: Record<string, NativeFiltersFormItem>;
+}
 
 export interface Column {
   name: string;
@@ -80,6 +85,8 @@ export interface Filter {
   scope: Scope;
   isInstant: boolean;
 }
+
+export type FilterConfiguration = Filter[];
 
 /** Current state of the filter, stored in `nativeFilters` in redux */
 export type FilterState = {

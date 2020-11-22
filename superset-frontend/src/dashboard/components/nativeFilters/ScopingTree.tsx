@@ -18,16 +18,18 @@
  */
 
 import React, { FC, useState } from 'react';
-import { Tree } from 'src/common/components';
+import { Tree, Form, FormInstance } from 'src/common/components';
 import { useFilterScopeTree } from './state';
 import { DASHBOARD_ROOT_ID } from '../../util/constants';
 import { findFilterScope } from './utils';
+import { Filter } from './types';
 
 type ScopingTreeProps = {
-  setFilterScope: Function;
+  form: FormInstance;
+  filterToEdit?: Filter;
 };
 
-const ScopingTree: FC<ScopingTreeProps> = ({ setFilterScope }) => {
+const ScopingTree: FC<ScopingTreeProps> = ({ form, filterToEdit }) => {
   const [expandedKeys, setExpandedKeys] = useState<string[]>([
     DASHBOARD_ROOT_ID,
   ]);
@@ -44,20 +46,28 @@ const ScopingTree: FC<ScopingTreeProps> = ({ setFilterScope }) => {
 
   const handleCheck = (checkedKeys: string[]) => {
     setCheckedKeys(checkedKeys);
-    setFilterScope(findFilterScope(checkedKeys, layout));
+    form.setFieldsValue({ scope: findFilterScope(checkedKeys, layout) });
+  };
+
+  const initialValue = filterToEdit?.scope || {
+    rootPath: [DASHBOARD_ROOT_ID],
+    excluded: [],
   };
 
   return (
-    <Tree
-      checkable
-      selectable={false}
-      onExpand={handleExpand}
-      expandedKeys={expandedKeys}
-      autoExpandParent={autoExpandParent}
-      onCheck={handleCheck}
-      checkedKeys={checkedKeys}
-      treeData={treeData}
-    />
+    <>
+      <Form.Item name="scope" hidden initialValue={initialValue} />
+      <Tree
+        checkable
+        selectable={false}
+        onExpand={handleExpand}
+        expandedKeys={expandedKeys}
+        autoExpandParent={autoExpandParent}
+        onCheck={handleCheck}
+        checkedKeys={checkedKeys}
+        treeData={treeData}
+      />
+    </>
   );
 };
 

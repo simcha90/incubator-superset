@@ -16,12 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { FC, useState, useEffect } from 'react';
-import { Select, Form, Space, InputNumber } from 'src/common/components';
+import React, { FC, useState } from 'react';
+import {
+  Form,
+  InputNumber,
+  Select,
+  Space,
+  FormInstance,
+} from 'src/common/components';
 import 'react-datetime/css/react-datetime.css';
 import { t } from '@superset-ui/core';
-import { AntCallback } from '../../types';
-import StartEnd, { SEPARATOR } from './StartEnd';
+import { AntCallback, Filter } from '../../types';
+import StartEnd from './StartEnd';
 import {
   TimeFrameNames,
   TimeFrames,
@@ -29,10 +35,12 @@ import {
   TimeGrains,
   TimeRelationNames,
   TimeRelations,
+  TimeRelationsMap,
 } from './types';
 
 type TimeRangeFilterProps = {
-  form: any;
+  filterToEdit?: Filter;
+  form: FormInstance;
 };
 
 type TimeRangeValue = {
@@ -40,89 +48,118 @@ type TimeRangeValue = {
   timeRange?: string;
 };
 
-const TimeRangeFilter: FC<TimeRangeFilterProps> = ({ form }) => {
+const TimeRangeFilter: FC<TimeRangeFilterProps> = ({ form, filterToEdit }) => {
+  const [timeRangeForm] = Form.useForm();
   const [timeRangeType, setTimeRangeType] = useState<TimeFrames>(
-    TimeFrames.noTimeRange,
+    filterToEdit?.defaultValue?.timeRangeType || TimeFrames.noTimeRange,
   );
-  const [timeRelation, setTimeRelation] = useState<TimeRelations>(
-    TimeRelations.last,
-  );
-  const [timePeriod, setTimePeriod] = useState<number>(7);
-  const [timeGrain, setTimeGrains] = useState<TimeGrains>(TimeGrains.days);
-  const [startEnd, setStartEnd] = useState<string>(SEPARATOR);
 
-  useEffect(() => {
-    const defaultValue: TimeRangeValue = {
-      timeRangeType,
-    };
-    if (timeRangeType === TimeFrames.relativeToToday) {
-      defaultValue.timeRange = `${timeRelation} ${timePeriod} ${timeGrain}`;
-    } else if (timeRangeType === TimeFrames.startEnd) {
-      defaultValue.timeRange = startEnd;
-    } else {
-      defaultValue.timeRange = timeRangeType;
-    }
+  const initialValue = {
+    timeRangeType:
+      filterToEdit?.defaultValue?.timeRangeType || TimeFrames.noTimeRange,
+    timeRange: filterToEdit?.defaultValue?.timeRange || TimeFrames.noTimeRange,
+  };
 
-    form.setFieldsValue({
-      defaultValue,
-    });
-  }, [timeRelation, timePeriod, timeGrain, form, timeRangeType, startEnd]);
+  const [
+    timeRelation = TimeRelations.last,
+    timePeriod = 7,
+    timeGrains = 'days',
+  ] = filterToEdit?.defaultValue || '';
 
   return (
     <>
-      <Form.Item hidden name="defaultValue" key="defaultValue" />
       <Form.Item
-        key="timeRangeType"
-        name="timeRangeType"
-        initialValue={timeRangeType}
-        label={t('Default Time Range')}
-        rules={[{ required: true }]}
+        hidden
+        name="defaultValue"
+        key="defaultValue"
+        initialValue={initialValue}
+      />
+      <Form
+        form={timeRangeForm}
+        onValuesChange={changes => {
+          const values = timeRangeForm.getFieldsValue();
+          const defaultValue: TimeRangeValue = {
+            timeRangeType: values.timeRangeType,
+          };
+          if (values.timeRangeType === TimeFrames.relativeToToday) {
+            defaultValue.timeRange = `${values.timeRelation} ${values.timePeriod} ${values.timeGrain}`;
+          } else if (values.timeRangeType === TimeFrames.startEnd) {
+            defaultValue.timeRange = values.startEnd;
+          } else {
+            defaultValue.timeRange = values.timeRangeType;
+          }
+
+          form.setFieldsValue({
+            defaultValue,
+          });
+        }}
       >
-        <Select onChange={setTimeRangeType as AntCallback}>
-          {Object.values(TimeFrames).map(timeFrame => (
-            <Select.Option value={timeFrame} key={timeFrame}>
-              {TimeFrameNames[timeFrame]}
-            </Select.Option>
-          ))}
-        </Select>
-      </Form.Item>
-      {timeRangeType === TimeFrames.startEnd && (
-        <StartEnd setStartEnd={setStartEnd} />
-      )}
-      {timeRangeType === TimeFrames.relativeToToday && (
         <Form.Item
+          key="timeRangeType"
+          name="timeRangeType"
+          initialValue={timeRangeType}
+          label={t('Default Time Range')}
           rules={[{ required: true }]}
-          label={TimeFrameNames[TimeFrames.relativeToToday]}
         >
-          <Space>
-            <Select
-              defaultValue={timeRelation}
-              onChange={setTimeRelation as AntCallback}
-            >
-              {Object.values(TimeRelations).map(relation => (
-                <Select.Option value={relation} key={relation}>
-                  {TimeRelationNames[relation]}
-                </Select.Option>
-              ))}
-            </Select>
-            <InputNumber
-              min={1}
-              defaultValue={timePeriod}
-              onChange={setTimePeriod as AntCallback}
-            />
-            <Select
-              defaultValue={timeGrain}
-              onChange={setTimeGrains as AntCallback}
-            >
-              {Object.values(TimeGrains).map(grain => (
-                <Select.Option value={grain} key={grain}>
-                  {TimeGrainNames[grain]}
-                </Select.Option>
-              ))}
-            </Select>
-          </Space>
+          <Select onChange={setTimeRangeType as AntCallback}>
+            {Object.values(TimeFrames).map(timeFrame => (
+              <Select.Option value={timeFrame} key={timeFrame}>
+                {TimeFrameNames[timeFrame]}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
-      )}
+        {timeRangeType === TimeFrames.startEnd && (
+          <StartEnd
+            setStartEnd={(value: string) =>
+              timeRangeForm.setFieldsValue({ startEnd: value })
+            }
+          />
+        )}
+        {timeRangeType === TimeFrames.relativeToToday && (
+          <Form.Item
+            rules={[{ required: true }]}
+            label={TimeFrameNames[TimeFrames.relativeToToday]}
+          >
+            <Space>
+              <Form.Item
+                name="timeRelation"
+                initialValue={TimeRelationsMap[timeRelation]}
+                rules={[{ required: true }]}
+              >
+                <Select>
+                  {Object.values(TimeRelations).map(relation => (
+                    <Select.Option value={relation} key={relation}>
+                      {TimeRelationNames[relation]}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="timePeriod"
+                initialValue={timePeriod}
+                rules={[{ required: true }]}
+              >
+                <InputNumber min={1} defaultValue={timePeriod} />
+              </Form.Item>
+              <Form.Item
+                initialValue={timeGrains}
+                rules={[{ required: true }]}
+                name="timeGrains"
+              >
+                <Select>
+                  {Object.values(TimeGrains).map(grain => (
+                    <Select.Option value={grain} key={grain}>
+                      {TimeGrainNames[grain]}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Space>
+          </Form.Item>
+        )}
+      </Form>
     </>
   );
 };
