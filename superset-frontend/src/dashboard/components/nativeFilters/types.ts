@@ -16,6 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { QueryObjectFilterClause } from '@superset-ui/core';
+import componentTypes from 'src/dashboard/util/componentTypes';
 
 export enum Scoping {
   all,
@@ -29,12 +31,13 @@ export interface NativeFiltersFormItem {
   name: string;
   dataset: {
     value: number;
+    label: string;
   };
-  type: FilterType;
+  column: string;
   isInstant: boolean;
-  column: {
-    value: Column;
-  };
+  allowsMultipleValues: boolean;
+  isRequired: boolean;
+  type: FilterType;
   defaultValue: DefaultValue;
 }
 
@@ -84,21 +87,35 @@ export interface Filter {
   defaultValue: DefaultValue;
   scope: Scope;
   isInstant: boolean;
+  allowsMultipleValues: boolean;
+  isRequired: boolean;
 }
 
 export type FilterConfiguration = Filter[];
+
+export type SelectedValues = string[] | null;
 
 /** Current state of the filter, stored in `nativeFilters` in redux */
 export type FilterState = {
   id: string; // ties this filter state to the config object
   optionsStatus: 'loading' | 'success' | 'fail';
   options: string[] | null;
-  selectedValues: string[] | null;
+  selectedValues?: SelectedValues;
   /**
    * If the config changes, the current options/values may no longer be valid.
    * isDirty indicates that state.
    */
   isDirty: boolean;
+};
+
+
+export type AllFilterState = {
+  column: Column;
+  datasetId: number;
+  datasource: string;
+  id: string;
+  selectedValues: SelectedValues;
+  filterClause?: QueryObjectFilterClause;
 };
 
 /** UI Ant tree type */

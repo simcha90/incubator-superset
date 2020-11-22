@@ -92,7 +92,7 @@ const StyledDashboardContent = styled.div`
     width: 100%;
     flex-grow: 1;
     position: relative;
-    margin: 24px 36px 24px;
+    margin: ${({ theme }) => theme.gridUnit * 6}px ${({ theme }) => theme.gridUnit * 9}px;
   }
 
   .dashboard-component-chart-holder {
@@ -144,6 +144,7 @@ class DashboardBuilder extends React.Component {
     );
     this.state = {
       tabIndex,
+      dashboardFiltersOpen: true,
     };
 
     this.handleChangeTab = this.handleChangeTab.bind(this);
@@ -188,6 +189,11 @@ class DashboardBuilder extends React.Component {
   handleChangeTab({ pathToTabIndex }) {
     this.props.setDirectPathToChild(pathToTabIndex);
   }
+
+  toggleDashboardFiltersOpen = () => {
+    const nextState = !this.state.dashboardFiltersOpen;
+    this.setState(() => ({ ...this.state, dashboardFiltersOpen: nextState }));
+  };
 
   render() {
     const {
@@ -261,9 +267,16 @@ class DashboardBuilder extends React.Component {
 
         <StyledDashboardContent className="dashboard-content">
           {isFeatureEnabled(FeatureFlag.DASHBOARD_NATIVE_FILTERS) && (
-            <StickyVerticalBar topOffset={barTopOffset} width={250}>
-              <FilterBar />
+            <StickyVerticalBar
+              filtersOpen={this.state.dashboardFiltersOpen}
+              topOffset={barTopOffset}
+            >
+              <FilterBar
+                filtersOpen={this.state.dashboardFiltersOpen}
+                toggleFiltersBar={this.toggleDashboardFiltersOpen}
+              />
             </StickyVerticalBar>
+            // <FilterBar />
           )}
           <div className="grid-container" data-test="grid-container">
             <ParentSize>

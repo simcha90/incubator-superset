@@ -32,6 +32,7 @@ export {
   Avatar,
   Button,
   Card,
+  Checkbox,
   Collapse,
   DatePicker,
   Dropdown,
@@ -78,7 +79,8 @@ export const Menu = Object.assign(AntdMenu, {
 });
 
 export const Input = styled(AntdInput)`
-  &[type="text"], &[type="textarea"] {
+  &[type='text'],
+  &[type='textarea'] {
     border: 1px solid ${({ theme }) => theme.colors.secondary.light3};
     border-radius: ${({ theme }) => theme.gridUnit}px;
   }
