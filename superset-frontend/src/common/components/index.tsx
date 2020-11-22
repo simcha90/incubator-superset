@@ -78,13 +78,15 @@ export const Menu = Object.assign(AntdMenu, {
   Item: MenuItem,
 });
 
-export const Input = styled(AntdInput)`
+const StyledInput = styled(AntdInput)`
   &[type='text'],
   &[type='textarea'] {
     border: 1px solid ${({ theme }) => theme.colors.secondary.light3};
     border-radius: ${({ theme }) => theme.gridUnit}px;
   }
 `;
+
+export const Input = Object.assign(AntdInput, StyledInput);
 
 export const NoAnimationDropdown = (props: DropDownProps) => (
   <Dropdown

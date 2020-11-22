@@ -18,6 +18,7 @@
  */
 
 import { t } from '@superset-ui/core';
+import { FormInstance } from 'antd/lib/form';
 import { TreeItem, Scope, FilterType } from './types';
 import {
   CHART_TYPE,
@@ -103,4 +104,21 @@ export const findFilterScope = (
 export const FilterTypeNames = {
   [FilterType.text]: t('Text'),
   [FilterType.timeRange]: t('Time Range'),
+};
+
+export const setFilterFieldValues = (
+  form: FormInstance,
+  filterId: string,
+  values: object,
+) => {
+  const formFilters = form.getFieldValue('filters');
+  form.setFieldsValue({
+    filters: {
+      ...formFilters,
+      [filterId]: {
+        ...formFilters[filterId],
+        ...values,
+      },
+    },
+  });
 };

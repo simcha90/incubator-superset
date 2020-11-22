@@ -117,7 +117,7 @@ const FilterValue: React.FC<FilterProps> = ({ filter, filters }) => {
   const [state, setState] = useState({ data: undefined });
   const { targets } = filter;
   const [target] = targets;
-  const { datasetId = 18, column } = target;
+  const { datasetId = 18, column = {} } = target;
   const { name: groupby } = column;
   const setter = (values: string[]): void => {
     return setSelectedValues(values, filter, filters);

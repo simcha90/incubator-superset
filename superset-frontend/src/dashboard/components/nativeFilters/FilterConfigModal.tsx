@@ -155,8 +155,8 @@ export function FilterConfigModal({
         )
         .map(id => {
           // create a filter config object from the form inputs
-          debugger
           const formInputs = values.filters[id];
+          debugger
           return {
             id,
             name: formInputs.name,

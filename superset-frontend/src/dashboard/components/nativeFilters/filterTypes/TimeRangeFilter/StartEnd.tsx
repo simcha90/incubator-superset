@@ -18,6 +18,7 @@
  */
 import { t, styled } from '@superset-ui/core';
 import React, { FC, useEffect, useState } from 'react';
+import moment from 'moment';
 import {
   DatePicker,
   Form,
@@ -27,7 +28,7 @@ import {
   Tooltip,
 } from '../../../../../common/components';
 import { TimeFrameNames, TimeFrames } from './types';
-import { AntCallback } from '../../types';
+import { AntCallback, Filter } from '../../types';
 
 const MOMENT_FORMAT_UI = 'YYYY-MM-DD HH:mm:ss';
 const MOMENT_FORMAT = 'YYYY-MM-DD[T]HH:mm:ss';
@@ -37,7 +38,7 @@ const START_END_TOOLTIP = t(
 );
 
 const StyledSwitch = styled(Switch)`
-  width: 65px;
+  width: 80px;
 `;
 
 const CONNECTOR_WIDTH = 32;
@@ -78,17 +79,22 @@ const LineFormItem = styled(Form.Item)`
 `;
 
 type StartEndProps = {
-  setStartEnd: Function;
+  setFieldValue: Function;
+  filterToEdit?: Filter;
 };
 
-const StartEnd: FC<StartEndProps> = ({ setStartEnd }) => {
-  const [start, setStart] = useState<string>('');
-  const [end, setEnd] = useState<string>('');
-  const [smartMode, setSmartMode] = useState<boolean>(false);
+const StartEnd: FC<StartEndProps> = ({ setFieldValue, filterToEdit }) => {
+  const [initStart, initEnd] =
+    filterToEdit?.defaultValue?.timeRange.split(SEPARATOR) || [];
+  const [start, setStart] = useState<string>(initStart);
+  const [end, setEnd] = useState<string>(initEnd);
+  const [smartMode, setSmartMode] = useState<boolean>(
+    initStart !== undefined && !moment(initStart).isValid(),
+  );
 
   useEffect(() => {
-    setStartEnd(`${start}${SEPARATOR}${end}`);
-  }, [start, end, setStartEnd]);
+    setFieldValue(`${start}${SEPARATOR}${end}`);
+  }, [start, end, setFieldValue]);
 
   return (
     <LineFormItem
@@ -99,22 +105,26 @@ const StartEnd: FC<StartEndProps> = ({ setStartEnd }) => {
         {smartMode ? (
           <Input.Group compact>
             <StyledInput
+              defaultValue={start}
               placeholder={t('3 weeks ago')}
               onChange={e => setStart(e.target.value)}
             />
             <Connector placeholder="~" disabled />
             <RightInput
+              defaultValue={end}
               placeholder={t('last day')}
               onChange={e => setEnd(e.target.value)}
             />
           </Input.Group>
         ) : (
           <DatePicker.RangePicker
+            // @ts-ignore
+            defaultValue={[moment(start), moment(end)]}
             allowEmpty={[true, true]}
             showTime
             format={MOMENT_FORMAT_UI}
             onChange={dates =>
-              setStartEnd(
+              setFieldValue(
                 dates
                   ? `${dates[0]?.format(
                       MOMENT_FORMAT,

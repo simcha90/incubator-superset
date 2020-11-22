@@ -16,8 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React, { useEffect, useMemo, useState } from 'react';
-import { FormInstance, FormItemProps } from 'antd/lib/form';
+
+import React, { useEffect, useState } from 'react';
+import { FormInstance } from 'antd/lib/form';
 import { styled, SupersetClient, t } from '@superset-ui/core';
 import SupersetResourceSelect, {
   Value,
@@ -26,7 +27,6 @@ import {
   Checkbox,
   Form,
   Input,
-  Radio,
   Select,
   Typography,
 } from 'src/common/components';
@@ -34,18 +34,12 @@ import { usePrevious } from 'src/common/hooks/usePrevious';
 import { AsyncSelect } from 'src/components/Select';
 import { useToasts } from 'src/messageToasts/enhancers/withToasts';
 import getClientErrorObject from 'src/utils/getClientErrorObject';
-import {
-  Filter,FilterType
-  FilterConfiguration,
-  NativeFiltersForm,
-  Scope,
-  Scoping,
-} from './types';
-import ScopingTree from './ScopingTree';
-import { FilterTypeNames } from './utils';
+import { Filter, FilterType, NativeFiltersForm } from './types';
+import { FilterTypeNames, setFilterFieldValues } from './utils';
 import TextFilter from './filterTypes/TextFilter';
 import TimeRangeFilter from './filterTypes/TimeRangeFilter/TimeRangeFilter';
 import { TimeFrames } from './filterTypes/TimeRangeFilter/types';
+import FilterScope from './FilterScope';
 
 type DatasetSelectValue = {
   value: number;
@@ -123,11 +117,6 @@ function ColumnSelect({
   );
 }
 
-const ScopingTreeNote = styled.div`
-  margin-top: -20px;
-  margin-bottom: 10px;
-`;
-
 const filterTypeElements = {
   [FilterType.text]: TextFilter,
   [FilterType.timeRange]: TimeRangeFilter,
@@ -163,9 +152,6 @@ export const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
   removed,
   form,
 }) => {
-  const [advancedScopingOpen, setAdvancedScopingOpen] = useState<Scoping>(
-    Scoping.all,
-  );
   const [filterType, setFilterType] = useState<FilterType>(
     filterToEdit?.type || FilterType.text,
   );
@@ -221,15 +207,15 @@ export const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
         />
       </Form.Item>
       <Form.Item
-        name="type"
-        initialValue={filterToEdit?.type}
+        name={['filters', filterId, 'isInstant']}
+        initialValue={filterToEdit?.type || FilterType.text}
         label={t('Filter Type')}
         rules={[{ required: true }]}
       >
         <Select
           onChange={type => {
             setFilterType(type as FilterType);
-            form.setFieldsValue({
+            setFilterFieldValues(form, filterId, {
               defaultValue: defaultValuesPerFilterType[type as FilterType],
             });
           }}
@@ -241,7 +227,11 @@ export const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
           ))}
         </Select>
       </Form.Item>
-      <FilterTypeElement form={form} filterToEdit={filterToEdit} />
+      <FilterTypeElement
+        form={form}
+        filterToEdit={filterToEdit}
+        filterId={filterId}
+      />
       <Form.Item
         name={['filters', filterId, 'isInstant']}
         label={t('Apply changes instantly')}
@@ -273,31 +263,11 @@ export const FilterConfigForm: React.FC<FilterConfigFormProps> = ({
         <Input type="checkbox" />
       </Form.Item>
       <Typography.Title level={5}>{t('Scoping')}</Typography.Title>
-      <Form.Item
-        name={['filters', filterId, 'scoping']}
-        initialValue={advancedScopingOpen}
-      >
-        <Radio.Group
-          onChange={({ target: { value } }) => {
-            setAdvancedScopingOpen(value as Scoping);
-          }}
-        >
-          <Radio value={Scoping.all}>{t('Apply to all panels')}</Radio>
-          <Radio value={Scoping.specific}>
-            {t('Apply to specific panels')}
-          </Radio>
-        </Radio.Group>
-      </Form.Item>
-      <ScopingTreeNote>
-        <Typography.Text type="secondary">
-          {advancedScopingOpen === Scoping.specific
-            ? t('Only selected panels will be affected by this filter')
-            : t('All panels with this column will be affected by this filter')}
-        </Typography.Text>
-      </ScopingTreeNote>
-      {scoping === Scoping.specific && (
-        <ScopingTree form={form} filterToEdit={filterToEdit} />
-      )}
+      <FilterScope
+        filterId={filterId}
+        filterToEdit={filterToEdit}
+        form={form}
+      />
     </>
   );
 };

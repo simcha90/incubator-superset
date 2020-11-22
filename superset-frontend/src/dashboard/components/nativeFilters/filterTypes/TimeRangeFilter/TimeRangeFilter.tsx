@@ -17,30 +17,19 @@
  * under the License.
  */
 import React, { FC, useState } from 'react';
-import {
-  Form,
-  InputNumber,
-  Select,
-  Space,
-  FormInstance,
-} from 'src/common/components';
+import { Form, Select, FormInstance } from 'src/common/components';
 import 'react-datetime/css/react-datetime.css';
 import { t } from '@superset-ui/core';
 import { AntCallback, Filter } from '../../types';
 import StartEnd from './StartEnd';
-import {
-  TimeFrameNames,
-  TimeFrames,
-  TimeGrainNames,
-  TimeGrains,
-  TimeRelationNames,
-  TimeRelations,
-  TimeRelationsMap,
-} from './types';
+import { TimeFrameNames, TimeFrames } from './types';
+import { setFilterFieldValues } from '../../utils';
+import RelativeToToday from './RaltiveToToday';
 
 type TimeRangeFilterProps = {
   filterToEdit?: Filter;
   form: FormInstance;
+  filterId: string;
 };
 
 type TimeRangeValue = {
@@ -48,7 +37,11 @@ type TimeRangeValue = {
   timeRange?: string;
 };
 
-const TimeRangeFilter: FC<TimeRangeFilterProps> = ({ form, filterToEdit }) => {
+const TimeRangeFilter: FC<TimeRangeFilterProps> = ({
+  form,
+  filterToEdit,
+  filterId,
+}) => {
   const [timeRangeForm] = Form.useForm();
   const [timeRangeType, setTimeRangeType] = useState<TimeFrames>(
     filterToEdit?.defaultValue?.timeRangeType || TimeFrames.noTimeRange,
@@ -60,42 +53,42 @@ const TimeRangeFilter: FC<TimeRangeFilterProps> = ({ form, filterToEdit }) => {
     timeRange: filterToEdit?.defaultValue?.timeRange || TimeFrames.noTimeRange,
   };
 
-  const [
-    timeRelation = TimeRelations.last,
-    timePeriod = 7,
-    timeGrains = 'days',
-  ] = filterToEdit?.defaultValue || '';
+  const setFieldValue = (timeRangeType: TimeFrames) => (timeRange: string) =>
+    setFilterFieldValues(form, filterId, {
+      defaultValue: {
+        timeRange,
+        timeRangeType,
+      },
+    });
 
   return (
     <>
       <Form.Item
         hidden
-        name="defaultValue"
-        key="defaultValue"
+        name={['filters', filterId, 'defaultValue']}
         initialValue={initialValue}
       />
       <Form
         form={timeRangeForm}
-        onValuesChange={changes => {
+        onValuesChange={() => {
           const values = timeRangeForm.getFieldsValue();
           const defaultValue: TimeRangeValue = {
             timeRangeType: values.timeRangeType,
           };
           if (values.timeRangeType === TimeFrames.relativeToToday) {
-            defaultValue.timeRange = `${values.timeRelation} ${values.timePeriod} ${values.timeGrain}`;
+            defaultValue.timeRange = `${values.timeRelation} ${values.timePeriod} ${values.timeGrains}`;
           } else if (values.timeRangeType === TimeFrames.startEnd) {
             defaultValue.timeRange = values.startEnd;
           } else {
             defaultValue.timeRange = values.timeRangeType;
           }
 
-          form.setFieldsValue({
+          setFilterFieldValues(form, filterId, {
             defaultValue,
           });
         }}
       >
         <Form.Item
-          key="timeRangeType"
           name="timeRangeType"
           initialValue={timeRangeType}
           label={t('Default Time Range')}
@@ -111,53 +104,15 @@ const TimeRangeFilter: FC<TimeRangeFilterProps> = ({ form, filterToEdit }) => {
         </Form.Item>
         {timeRangeType === TimeFrames.startEnd && (
           <StartEnd
-            setStartEnd={(value: string) =>
-              timeRangeForm.setFieldsValue({ startEnd: value })
-            }
+            filterToEdit={filterToEdit}
+            setFieldValue={setFieldValue(TimeFrames.startEnd)}
           />
         )}
         {timeRangeType === TimeFrames.relativeToToday && (
-          <Form.Item
-            rules={[{ required: true }]}
-            label={TimeFrameNames[TimeFrames.relativeToToday]}
-          >
-            <Space>
-              <Form.Item
-                name="timeRelation"
-                initialValue={TimeRelationsMap[timeRelation]}
-                rules={[{ required: true }]}
-              >
-                <Select>
-                  {Object.values(TimeRelations).map(relation => (
-                    <Select.Option value={relation} key={relation}>
-                      {TimeRelationNames[relation]}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="timePeriod"
-                initialValue={timePeriod}
-                rules={[{ required: true }]}
-              >
-                <InputNumber min={1} defaultValue={timePeriod} />
-              </Form.Item>
-              <Form.Item
-                initialValue={timeGrains}
-                rules={[{ required: true }]}
-                name="timeGrains"
-              >
-                <Select>
-                  {Object.values(TimeGrains).map(grain => (
-                    <Select.Option value={grain} key={grain}>
-                      {TimeGrainNames[grain]}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Space>
-          </Form.Item>
+          <RelativeToToday
+            filterToEdit={filterToEdit}
+            setFieldValue={setFieldValue(TimeFrames.relativeToToday)}
+          />
         )}
       </Form>
     </>

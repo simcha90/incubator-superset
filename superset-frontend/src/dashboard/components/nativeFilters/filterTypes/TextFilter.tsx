@@ -24,12 +24,13 @@ import { Filter } from '../types';
 
 type TextFilterProps = {
   filterToEdit?: Filter;
+  filterId: string;
 };
 
-const TextFilter: FC<TextFilterProps> = ({ filterToEdit }) => {
+const TextFilter: FC<TextFilterProps> = ({ filterToEdit, filterId }) => {
   return (
     <Form.Item
-      name="defaultValue"
+      name={['filters', filterId, 'defaultValue']}
       label={t('Default Value')}
       initialValue={filterToEdit?.defaultValue}
     >

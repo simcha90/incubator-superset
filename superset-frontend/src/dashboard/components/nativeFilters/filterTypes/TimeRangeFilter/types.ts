@@ -65,6 +65,12 @@ export enum TimeGrains {
   'years' = 'years',
 }
 
+
+export const TimeGrainsMap = Object.entries(TimeGrains).reduce(
+  (acc, [key, value]) => ({ ...acc, [value]: key }),
+  {},
+);
+
 export const TimeGrainNames = {
   [TimeGrains.seconds]: t('seconds'),
   [TimeGrains.minutes]: t('minutes'),
