@@ -23,7 +23,7 @@ export enum Scoping {
   specific,
 }
 
-type DefaultValue = any;
+type DefaultValue = any | null;
 
 export interface NativeFiltersFormItem {
   scope: Scope;
