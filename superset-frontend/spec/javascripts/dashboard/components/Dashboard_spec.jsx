@@ -19,7 +19,6 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 import sinon from 'sinon';
-
 import Dashboard from 'src/dashboard/components/Dashboard';
 import DashboardBuilder from 'src/dashboard/components/DashboardBuilder/DashboardBuilder';
 import { CHART_TYPE } from 'src/dashboard/util/componentTypes';
@@ -29,7 +28,6 @@ import newComponentFactory from 'src/dashboard/util/newComponentFactory';
 import chartQueries from 'spec/fixtures/mockChartQueries';
 import datasources from 'spec/fixtures/mockDatasource';
 import {
-  extraFormData,
   NATIVE_FILTER_ID,
   layoutForSingleNativeFilter,
   singleNativeFiltersState,
