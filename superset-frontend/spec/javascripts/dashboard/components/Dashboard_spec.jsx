@@ -34,6 +34,7 @@ import {
   layoutForSingleNativeFilter,
   singleNativeFiltersState,
   dataMaskWith1Filter,
+  filterState,
 } from 'spec/fixtures/mockNativeFilters';
 import dashboardInfo from 'spec/fixtures/mockDashboardInfo';
 import { dashboardLayout } from 'spec/fixtures/mockDashboardLayout';
@@ -167,7 +168,7 @@ describe('Dashboard', () => {
         ...OVERRIDE_FILTERS,
         [NATIVE_FILTER_ID]: {
           scope: [230],
-          values: [extraFormData],
+          values: [filterState],
         },
       });
     });

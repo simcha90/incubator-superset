@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ExtraFormData } from '@superset-ui/core';
+import { ExtraFormData, FilterState } from '@superset-ui/core';
 import { NativeFiltersState } from 'src/dashboard/reducers/types';
 import { DataMaskStateWithId } from '../../src/dataMask/types';
 
@@ -119,6 +119,10 @@ export const extraFormData: ExtraFormData = {
   ],
 };
 
+export const filterState: FilterState = {
+  value: ['No, not an ethnic minority'],
+};
+
 export const NATIVE_FILTER_ID = 'NATIVE_FILTER-p4LImrSgA';
 
 export const singleNativeFiltersState = {
@@ -147,9 +151,7 @@ export const dataMaskWith1Filter: DataMaskStateWithId = {
   [NATIVE_FILTER_ID]: {
     id: NATIVE_FILTER_ID,
     extraFormData,
-    filterState: {
-      value: ['No, not an ethnic minority'],
-    },
+    filterState,
   },
 };
 
